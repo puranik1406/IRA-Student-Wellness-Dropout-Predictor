@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ student['name'] }}{% endblock %}
+
+{% block content %}
+<div class="bg-light min-vh-100 py-4">
+    <div class="container">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-12">
+                                <h1 class="mb-1">Welcome back, {{ student['name'] }}! 👋</h1>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-person-badge"></i> {{ student['roll_number'] }}
+                                    |
+                                    {{ student['department'] }} | Semester {{ student['semester'] }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bento Grid - Main Stats (Only Attendance & Fee Status) -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 bg-success text-white">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-calendar-check" style="font-size: 3rem;"></i>
+                        <h2 class="mt-3 mb-0">
+                            {% if attendance %}
+                            {{
+                            "%.1f"|format(attendance|map(attribute='attendance_percentage')|list|sum
+                            / attendance|length) }}%
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </h2>
+                        <p class="mb-0 fs-5">Average Attendance</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 {% if student['fee_pending'] %}bg-warning{% else %}accent-gold{% endif %} text-white">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-currency-dollar" style="font-size: 3rem;"></i>
+                        <h2 class="mt-3 mb-0">{{ 'Pending' if student['fee_pending'] else 'Paid'
+                            }}</h2>
+                        <p class="mb-0 fs-5">Fee Status</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Wellness Insights Carousel -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h4 class="mb-0"><i class="bi bi-lightbulb"></i> AI Wellness Insights</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="wellnessCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                {% for tip in tips %}
+                                <button type="button" data-bs-target="#wellnessCarousel"
+                                        data-bs-slide-to="{{ loop.index0 }}"
+                                        {% if loop.first %}class="active" {% endif %}></button>
+                                {% endfor %}
+                            </div>
+                            <div class="carousel-inner">
+                                {% for tip in tips %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}"
+                                     style="min-height: 200px;">
+                                    <div class="text-center p-5">
+                                        <div style="font-size: 4rem;">{{ tip['icon'] }}</div>
+                                        <h3 class="mt-3 mb-3">{{ tip['title'] }}</h3>
+                                        <p class="lead text-muted">{{ tip['text'] }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button"
+                                    data-bs-target="#wellnessCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                    data-bs-target="#wellnessCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary btn-lg" id="scheduleMeetingBtn">
+                                <i class="bi bi-calendar-plus"></i> Schedule Counselor Meeting
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bento Grid - Data Sections -->
+        <div class="row g-3 mb-4">
+            <!-- Mood Trends -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-emoji-smile"></i> Recent Mood Check-ins
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if moods %}
+                        <div class="list-group list-group-flush">
+                            {% for mood in moods[:5] %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge 
+                                            {% if mood['mood_score'] >= 8 %}bg-success
+                                            {% elif mood['mood_score'] >= 6 %}bg-info
+                                            {% elif mood['mood_score'] >= 4 %}bg-warning
+                                            {% else %}bg-danger{% endif %} me-2">
+                                            {{ mood['mood_score'] }}/10
+                                        </span>
+                                        <small class="text-muted">{{ mood['notes'] }}</small>
+                                    </div>
+                                    <small class="text-muted">{{ mood['created_at'][:10] }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No mood data yet. Start logging your
+                            mood!</p>
+                        {% endif %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('mood') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Log Mood
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity & Sleep -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-activity"></i> Activity & Sleep (Last 7
+                            Days)</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if activities %}
+                        <div class="list-group list-group-flush">
+                            {% for activity in activities[:5] %}
+                            <div class="list-group-item px-0">
+                                <div class="row small">
+                                    <div class="col-4 text-muted">{{ activity['date'] }}</div>
+                                    <div class="col-8">
+                                        <i class="bi bi-person-walking text-primary"></i> {{
+                                        activity['steps'] }} steps |
+                                        <i class="bi bi-moon text-info"></i> {{
+                                        activity['sleep_hours'] }}h sleep |
+                                        <i class="bi bi-heart-pulse text-danger"></i> {{
+                                        activity['exercise_minutes'] }}min
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No activity data available.</p>
+                        {% endif %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <small><i class="bi bi-info-circle"></i> Data synced from fitness app
+                                (mock)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Attendance Record</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if attendance %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Attended</th>
+                                    <th>Total</th>
+                                    <th>Percentage</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for record in attendance[:4] %}
+                                <tr>
+                                    <td>{{ record['month'] }}</td>
+                                    <td>{{ record['attended_classes'] }}</td>
+                                    <td>{{ record['total_classes'] }}</td>
+                                    <td>
+                                            <span class="badge 
+                                                {% if record['attendance_percentage'] >= 85 %}bg-success
+                                                {% elif record['attendance_percentage'] >= 75 %}bg-warning text-dark
+                                                {% else %}bg-danger{% endif %}">
+                                                {{ "%.1f"|format(record['attendance_percentage']) }}%
+                                            </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No attendance data available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Journals -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Recent Journal Entries
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if journals %}
+                        <div class="list-group list-group-flush">
+                            {% for journal in journals %}
+                            <div class="list-group-item px-0">
+                                <h6 class="mb-1">{{ journal['title'] }}</h6>
+                                <p class="mb-1 small text-muted">{{ journal['content'][:100] }}{% if
+                                    journal['content']|length > 100 %}...{% endif %}</p>
+                                <small class="text-muted">{{ journal['created_at'][:10] }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No journal entries yet.</p>
+                        {% endif %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('journal') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Write Journal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Chatbot Widget -->
+<div class="chatbot-widget">
+    <div class="chatbot-window" id="chatbotWindow" style="display: none;">
+        <div class="chatbot-header">
+            <span><i class="bi bi-robot"></i> Beacon AI Assistant</span>
+            <button class="btn btn-sm text-white" onclick="toggleChatbot()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="chat-message bot">
+                <div class="message-bubble bot">
+                    👋 Hi! I'm your Beacon AI assistant. How can I help you today?
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" class="chatbot-input" id="chatInput"
+                   placeholder="Type your message..."
+                   onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="chatbot-send" onclick="sendMessage()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+    <button class="chatbot-toggle" onclick="toggleChatbot()" title="Chat with Beacon AI">
+        <span style="font-size: 48px; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));">🧸</span>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('scheduleMeetingBtn').addEventListener('click', function() {
+    fetch('{{ url_for("schedule_meeting") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success snackbar
+            const snackbar = document.createElement('div');
+            snackbar.className = 'alert alert-success position-fixed bottom-0 end-0 m-3';
+            snackbar.style.zIndex = '9999';
+            snackbar.innerHTML = `
+                <i class="bi bi-check-circle"></i> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(snackbar);
+            setTimeout(() => snackbar.remove(), 5000);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+// Chatbot functionality
+function toggleChatbot() {
+    const chatWindow = document.getElementById('chatbotWindow');
+    if (chatWindow.style.display === 'none') {
+        chatWindow.style.display = 'flex';
+    } else {
+        chatWindow.style.display = 'none';
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (message === '') return;
+    
+    // Add user message
+    const messagesContainer = document.getElementById('chatMessages');
+    const userMessageDiv = document.createElement('div');
+    userMessageDiv.className = 'chat-message user';
+    userMessageDiv.innerHTML = `<div class="message-bubble user">${message}</div>`;
+    messagesContainer.appendChild(userMessageDiv);
+    
+    input.value = '';
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Simulate bot response (AI integration will be done later)
+    setTimeout(() => {
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.className = 'chat-message bot';
+        
+        let botResponse = getBotResponse(message);
+        
+        botMessageDiv.innerHTML = `<div class="message-bubble bot">${botResponse}</div>`;
+        messagesContainer.appendChild(botMessageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 1000);
+}
+
+function getBotResponse(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    // Simple keyword-based responses (placeholder for AI)
+    if (lowerMessage.includes('mood') || lowerMessage.includes('feel')) {
+        return "I understand you want to talk about your mood. Regular mood tracking helps us support you better. Would you like to log your mood now?";
+    } else if (lowerMessage.includes('stress') || lowerMessage.includes('anxious') || lowerMessage.includes('worried')) {
+        return "I'm sorry you're feeling stressed. Remember, it's okay to ask for help. Consider talking to a counselor, practicing deep breathing, or taking a short break.";
+    } else if (lowerMessage.includes('attendance') || lowerMessage.includes('class')) {
+        return "Maintaining good attendance is important for your success. Try setting reminders for your classes and reach out if you're having trouble attending.";
+    } else if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
+        return "I'm here to help! You can log your mood, write in your journal, or schedule a meeting with a counselor anytime. What would you like to do?";
+    } else if (lowerMessage.includes('counselor') || lowerMessage.includes('meet')) {
+        return "Would you like to schedule a meeting with a counselor? You can use the 'Schedule Counselor Meeting' button on your dashboard.";
+    } else if (lowerMessage.includes('thank')) {
+        return "You're welcome! I'm always here if you need support. Take care! 😊";
+    } else {
+        return "Thanks for sharing! I'm still learning, but I'm here to support you. You can track your mood, write in your journal, or schedule a counselor meeting anytime.";
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,691 @@
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+import sqlite3
+import os
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'beacon_secret_key')
+app.config['DATABASE'] = 'instance/beacon.db'
+
+def get_db():
+    """Connect to the database"""
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def calculate_risk_score(student_id):
+    """
+    Calculate dropout risk score based on multiple factors
+    Returns: (risk_level, risk_score, factors)
+    risk_level: 'high', 'moderate', or 'low'
+    risk_score: 0-100
+    factors: dict of contributing factors
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get student data
+    cursor.execute('SELECT * FROM students WHERE id = ?', (student_id,))
+    student = cursor.fetchone()
+    
+    if not student:
+        return 'low', 0, {}
+    
+    risk_score = 0
+    factors = {}
+    
+    # Factor 1: CGPA (30 points)
+    cgpa = student['cgpa']
+    if cgpa < 6.0:
+        risk_score += 30
+        factors['academics'] = 'Critical - CGPA below 6.0'
+    elif cgpa < 7.0:
+        risk_score += 20
+        factors['academics'] = 'Concerning - CGPA below 7.0'
+    elif cgpa < 8.0:
+        risk_score += 10
+        factors['academics'] = 'Below average'
+    else:
+        factors['academics'] = 'Good performance'
+    
+    # Factor 2: Attendance (30 points)
+    cursor.execute('''
+        SELECT AVG(attendance_percentage) as avg_attendance 
+        FROM attendance 
+        WHERE student_id = ?
+    ''', (student_id,))
+    attendance_data = cursor.fetchone()
+    avg_attendance = attendance_data['avg_attendance'] if attendance_data else 100
+    
+    if avg_attendance < 70:
+        risk_score += 30
+        factors['attendance'] = f'Critical - {avg_attendance:.1f}% attendance'
+    elif avg_attendance < 75:
+        risk_score += 20
+        factors['attendance'] = f'Concerning - {avg_attendance:.1f}% attendance'
+    elif avg_attendance < 85:
+        risk_score += 10
+        factors['attendance'] = f'Below target - {avg_attendance:.1f}% attendance'
+    else:
+        factors['attendance'] = f'Good - {avg_attendance:.1f}% attendance'
+    
+    # Factor 3: Fee Pending (20 points)
+    if student['fee_pending']:
+        risk_score += 20
+        factors['fees'] = 'Fee payment pending'
+    else:
+        factors['fees'] = 'No pending fees'
+    
+    # Factor 4: Mental Health/Mood (20 points)
+    cursor.execute('''
+        SELECT AVG(mood_score) as avg_mood 
+        FROM moods 
+        WHERE student_id = ? 
+        AND created_at >= datetime('now', '-7 days')
+    ''', (student_id,))
+    mood_data = cursor.fetchone()
+    avg_mood = mood_data['avg_mood'] if mood_data and mood_data['avg_mood'] else 7
+    
+    if avg_mood < 4:
+        risk_score += 20
+        factors['mental_health'] = f'Critical - Low mood (avg: {avg_mood:.1f}/10)'
+    elif avg_mood < 6:
+        risk_score += 15
+        factors['mental_health'] = f'Concerning mood (avg: {avg_mood:.1f}/10)'
+    elif avg_mood < 7:
+        risk_score += 8
+        factors['mental_health'] = f'Fair mood (avg: {avg_mood:.1f}/10)'
+    else:
+        factors['mental_health'] = f'Good mood (avg: {avg_mood:.1f}/10)'
+    
+    conn.close()
+    
+    # Determine risk level
+    if risk_score >= 50:
+        risk_level = 'high'
+    elif risk_score >= 30:
+        risk_level = 'moderate'
+    else:
+        risk_level = 'low'
+    
+    return risk_level, risk_score, factors
+
+def get_wellness_tips(risk_level, factors):
+    """Generate personalized wellness tips based on risk factors"""
+    tips = []
+    
+    if 'Critical' in factors.get('academics', ''):
+        tips.append({
+            'icon': '📚',
+            'title': 'Academic Support',
+            'text': 'Schedule tutoring sessions and meet with your professors during office hours.'
+        })
+    
+    if 'Critical' in factors.get('attendance', '') or 'Concerning' in factors.get('attendance', ''):
+        tips.append({
+            'icon': '📅',
+            'title': 'Improve Attendance',
+            'text': 'Set daily reminders for classes and try to maintain at least 75% attendance.'
+        })
+    
+    if 'pending' in factors.get('fees', ''):
+        tips.append({
+            'icon': '💰',
+            'title': 'Fee Payment',
+            'text': 'Contact the accounts office to discuss payment plans or scholarship opportunities.'
+        })
+    
+    if 'Critical' in factors.get('mental_health', '') or 'Concerning' in factors.get('mental_health', ''):
+        tips.append({
+            'icon': '🧘',
+            'title': 'Mental Wellness',
+            'text': 'Practice mindfulness, maintain a regular sleep schedule, and consider talking to a counselor.'
+        })
+    
+    # Add general tips
+    if risk_level == 'low':
+        tips.append({
+            'icon': '⭐',
+            'title': 'Keep It Up!',
+            'text': "You're doing great! Maintain your routine and stay engaged with your studies."
+        })
+    
+    tips.append({
+        'icon': '🏃',
+        'title': 'Stay Active',
+        'text': 'Regular physical activity can improve focus and reduce stress. Aim for 30 minutes daily.'
+    })
+    
+    tips.append({
+        'icon': '💤',
+        'title': 'Quality Sleep',
+        'text': 'Aim for 7-8 hours of sleep each night for better cognitive function and mood.'
+    })
+    
+    return tips
+
+@app.route('/')
+def index():
+    """Home page - shows landing page or redirects if logged in"""
+    if 'user_id' in session:
+        if session.get('user_type') == 'student':
+            return redirect(url_for('student_dashboard', id=session['user_id']))
+        elif session.get('user_type') == 'counselor':
+            return redirect(url_for('counselor_dashboard'))
+    return render_template('landing.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page for both students and counselors"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user_type = request.form.get('user_type', 'student')
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        if user_type == 'student':
+            cursor.execute('SELECT * FROM students WHERE email = ? AND password = ?', (email, password))
+            user = cursor.fetchone()
+            if user:
+                session['user_id'] = user['id']
+                session['user_name'] = user['name']
+                session['user_type'] = 'student'
+                conn.close()
+                flash('Welcome back!', 'success')
+                return redirect(url_for('student_dashboard', id=user['id']))
+        else:
+            cursor.execute('SELECT * FROM counselors WHERE email = ? AND password = ?', (email, password))
+            user = cursor.fetchone()
+            if user:
+                session['user_id'] = user['id']
+                session['user_name'] = user['name']
+                session['user_type'] = 'counselor'
+                conn.close()
+                flash('Welcome back!', 'success')
+                return redirect(url_for('counselor_dashboard'))
+        
+        conn.close()
+        flash('Invalid email or password', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/counselor-login', methods=['GET', 'POST'])
+def counselor_login():
+    """Counselor login page - redirects to main login"""
+    return redirect(url_for('login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Registration page for students"""
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        roll_number = request.form.get('roll_number')
+        department = request.form.get('department')
+        semester = request.form.get('semester')
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                INSERT INTO students (name, email, password, roll_number, department, semester)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (name, email, password, roll_number, department, semester))
+            conn.commit()
+            
+            # Get the new student's ID
+            student_id = cursor.lastrowid
+            
+            session['user_id'] = student_id
+            session['user_name'] = name
+            session['user_type'] = 'student'
+            
+            conn.close()
+            flash('Registration successful!', 'success')
+            return redirect(url_for('student_dashboard', id=student_id))
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash('Email or Roll Number already exists', 'error')
+    
+    return render_template('register.html')
+
+@app.route('/counselor-register', methods=['GET', 'POST'])
+def counselor_register():
+    """Registration page for counselors"""
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        phone = request.form.get('phone')
+        employee_id = request.form.get('employee_id')
+        license_number = request.form.get('license_number')
+        specialization = request.form.get('specialization')
+        qualifications = request.form.get('qualifications')
+        experience_years = request.form.get('experience_years')
+        department = request.form.get('department', '')
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                INSERT INTO counselors (name, email, password, phone, employee_id, license_number, 
+                                       specialization, qualifications, experience_years, department)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (name, email, password, phone, employee_id, license_number, 
+                  specialization, qualifications, experience_years, department))
+            conn.commit()
+            
+            # Get the new counselor's ID
+            counselor_id = cursor.lastrowid
+            
+            session['user_id'] = counselor_id
+            session['user_name'] = name
+            session['user_type'] = 'counselor'
+            
+            conn.close()
+            flash('Registration successful! Welcome to Beacon.', 'success')
+            return redirect(url_for('counselor_dashboard'))
+        except sqlite3.IntegrityError as e:
+            conn.close()
+            if 'email' in str(e).lower():
+                flash('Email already exists', 'error')
+            elif 'employee_id' in str(e).lower():
+                flash('Employee ID already exists', 'error')
+            else:
+                flash('Registration failed. Please check your information.', 'error')
+    
+    return render_template('counselor_register.html')
+
+@app.route('/logout')
+def logout():
+    """Logout user"""
+    session.clear()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('login'))
+
+@app.route('/student/<int:id>')
+def student_dashboard(id):
+    """Student dashboard showing all their data and risk assessment"""
+    if 'user_id' not in session or session.get('user_type') != 'student' or session['user_id'] != id:
+        flash('Please login to continue', 'error')
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get student info
+    cursor.execute('SELECT * FROM students WHERE id = ?', (id,))
+    student = cursor.fetchone()
+    
+    # Calculate risk
+    risk_level, risk_score, factors = calculate_risk_score(id)
+    
+    # Get wellness tips
+    tips = get_wellness_tips(risk_level, factors)
+    
+    # Get recent moods (last 7 days)
+    cursor.execute('''
+        SELECT * FROM moods 
+        WHERE student_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 7
+    ''', (id,))
+    moods = cursor.fetchall()
+    
+    # Get recent activities
+    cursor.execute('''
+        SELECT * FROM activities 
+        WHERE student_id = ? 
+        ORDER BY date DESC 
+        LIMIT 7
+    ''', (id,))
+    activities = cursor.fetchall()
+    
+    # Get attendance records
+    cursor.execute('''
+        SELECT * FROM attendance 
+        WHERE student_id = ? 
+        ORDER BY id DESC
+    ''', (id,))
+    attendance = cursor.fetchall()
+    
+    # Get recent journals
+    cursor.execute('''
+        SELECT * FROM journals 
+        WHERE student_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 5
+    ''', (id,))
+    journals = cursor.fetchall()
+    
+    conn.close()
+    
+    return render_template('student_dashboard.html', 
+                         student=student,
+                         risk_level=risk_level,
+                         risk_score=risk_score,
+                         factors=factors,
+                         tips=tips,
+                         moods=moods,
+                         activities=activities,
+                         attendance=attendance,
+                         journals=journals)
+
+@app.route('/mood', methods=['GET', 'POST'])
+def mood():
+    """Mood input page"""
+    if 'user_id' not in session or session.get('user_type') != 'student':
+        flash('Please login to continue', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        mood_score = request.form.get('mood_score')
+        notes = request.form.get('notes', '')
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO moods (student_id, mood_score, notes)
+            VALUES (?, ?, ?)
+        ''', (session['user_id'], mood_score, notes))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('Mood recorded successfully!', 'success')
+        return redirect(url_for('student_dashboard', id=session['user_id']))
+    
+    return render_template('mood.html')
+
+@app.route('/journal', methods=['GET', 'POST'])
+def journal():
+    """Journal page for students"""
+    if 'user_id' not in session or session.get('user_type') != 'student':
+        flash('Please login to continue', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO journals (student_id, title, content)
+            VALUES (?, ?, ?)
+        ''', (session['user_id'], title, content))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('Journal entry saved!', 'success')
+        return redirect(url_for('journal'))
+    
+    # Get existing journals
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM journals 
+        WHERE student_id = ? 
+        ORDER BY created_at DESC
+    ''', (session['user_id'],))
+    journals = cursor.fetchall()
+    conn.close()
+    
+    return render_template('journal.html', journals=journals)
+
+@app.route('/schedule_meeting', methods=['POST'])
+def schedule_meeting():
+    """Schedule a meeting with counselor"""
+    if 'user_id' not in session or session.get('user_type') != 'student':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Insert meeting request
+    cursor.execute('''
+        INSERT INTO meetings (student_id, status)
+        VALUES (?, 'scheduled')
+    ''', (session['user_id'],))
+    
+    # Get student info
+    cursor.execute('SELECT name, roll_number FROM students WHERE id = ?', (session['user_id'],))
+    student = cursor.fetchone()
+    
+    # Create notification for all counselors
+    cursor.execute('SELECT id FROM counselors')
+    counselors = cursor.fetchall()
+    
+    for counselor in counselors:
+        cursor.execute('''
+            INSERT INTO notifications (user_id, user_type, title, message, link, is_read, reference_id)
+            VALUES (?, 'counselor', ?, ?, ?, 0, ?)
+        ''', (
+            counselor['id'],
+            'New Meeting Request',
+            f"{student['name']} ({student['roll_number']}) has requested a counseling session.",
+            f"/counselor#student{session['user_id']}",
+            session['user_id']
+        ))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'message': 'Meeting scheduled successfully! You will receive a call soon.'})
+
+@app.route('/schedule_meeting_for_student/<int:student_id>', methods=['POST'])
+def schedule_meeting_for_student(student_id):
+    """Counselor schedules a meeting with a student"""
+    if 'user_id' not in session or session.get('user_type') != 'counselor':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get student info
+    cursor.execute('SELECT name, roll_number FROM students WHERE id = ?', (student_id,))
+    student = cursor.fetchone()
+    
+    if not student:
+        return jsonify({'success': False, 'message': 'Student not found'}), 404
+    
+    # Insert meeting
+    cursor.execute('''
+        INSERT INTO meetings (student_id, counselor_id, status)
+        VALUES (?, ?, 'scheduled')
+    ''', (student_id, session['user_id']))
+    
+    # Create notification for student
+    cursor.execute('''
+        INSERT INTO notifications (user_id, user_type, title, message, link, is_read, reference_id)
+        VALUES (?, 'student', ?, ?, ?, 0, ?)
+    ''', (
+        student_id,
+        'Counseling Session Scheduled',
+        'A counselor has scheduled a session with you. You will be contacted soon.',
+        f"/student/{student_id}",
+        student_id
+    ))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'success': True, 
+        'message': f'Meeting scheduled with {student["name"]}. Student has been notified.'
+    })
+
+@app.route('/notifications')
+def get_notifications():
+    """Get notifications for current user"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT * FROM notifications 
+        WHERE user_id = ? AND user_type = ?
+        ORDER BY created_at DESC
+        LIMIT 20
+    ''', (session['user_id'], session.get('user_type')))
+    
+    notifications = [dict(row) for row in cursor.fetchall()]
+    
+    # Get unread count
+    cursor.execute('''
+        SELECT COUNT(*) as count FROM notifications 
+        WHERE user_id = ? AND user_type = ? AND is_read = 0
+    ''', (session['user_id'], session.get('user_type')))
+    
+    unread_count = cursor.fetchone()['count']
+    
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'notifications': notifications,
+        'unread_count': unread_count
+    })
+
+@app.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
+def mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        UPDATE notifications 
+        SET is_read = 1 
+        WHERE id = ? AND user_id = ? AND user_type = ?
+    ''', (notification_id, session['user_id'], session.get('user_type')))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True})
+
+@app.route('/counselor')
+def counselor_dashboard():
+    """Counselor dashboard showing all students sorted by risk"""
+    if 'user_id' not in session or session.get('user_type') != 'counselor':
+        flash('Please login as counselor to continue', 'error')
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get all students
+    cursor.execute('SELECT * FROM students ORDER BY name')
+    students = cursor.fetchall()
+    
+    # Calculate risk for each student
+    students_with_risk = []
+    risk_counts = {'high': 0, 'moderate': 0, 'low': 0}
+    
+    for student in students:
+        risk_level, risk_score, factors = calculate_risk_score(student['id'])
+        students_with_risk.append({
+            'id': student['id'],
+            'name': student['name'],
+            'email': student['email'],
+            'roll_number': student['roll_number'],
+            'department': student['department'],
+            'semester': student['semester'],
+            'cgpa': student['cgpa'],
+            'risk_level': risk_level,
+            'risk_score': risk_score,
+            'factors': factors
+        })
+        risk_counts[risk_level] += 1
+    
+    # Sort by risk score (highest first)
+    students_with_risk.sort(key=lambda x: x['risk_score'], reverse=True)
+    
+    # Get upcoming meetings
+    cursor.execute('''
+        SELECT m.*, s.name as student_name, s.roll_number
+        FROM meetings m
+        JOIN students s ON m.student_id = s.id
+        WHERE m.status = 'scheduled'
+        ORDER BY m.scheduled_at DESC
+    ''')
+    meetings = cursor.fetchall()
+    
+    conn.close()
+    
+    return render_template('counselor_dashboard.html',
+                         students=students_with_risk,
+                         risk_counts=risk_counts,
+                         meetings=meetings)
+
+@app.route('/student_details/<int:id>')
+def student_details(id):
+    """Get detailed student data for counselor view (AJAX)"""
+    if 'user_id' not in session or session.get('user_type') != 'counselor':
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get moods for past 7 days
+    cursor.execute('''
+        SELECT DATE(created_at) as date, AVG(mood_score) as avg_mood
+        FROM moods 
+        WHERE student_id = ?
+        AND created_at >= datetime('now', '-7 days')
+        GROUP BY DATE(created_at)
+        ORDER BY date
+    ''', (id,))
+    moods = [dict(row) for row in cursor.fetchall()]
+    
+    # Get activities for past 7 days
+    cursor.execute('''
+        SELECT * FROM activities 
+        WHERE student_id = ? 
+        ORDER BY date DESC 
+        LIMIT 7
+    ''', (id,))
+    activities = [dict(row) for row in cursor.fetchall()]
+    
+    # Get attendance
+    cursor.execute('''
+        SELECT * FROM attendance 
+        WHERE student_id = ? 
+        ORDER BY id DESC
+        LIMIT 4
+    ''', (id,))
+    attendance = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    return jsonify({
+        'moods': moods,
+        'activities': activities,
+        'attendance': attendance
+    })
+
+if __name__ == '__main__':
+    # Check if database exists
+    if not os.path.exists('instance/beacon.db'):
+        print("⚠️  Database not found. Please run 'python create_database.py' first.")
+    else:
+        print("🚀 Starting Beacon - Student Dropout Prevention System")
+        print("📍 Access the application at: http://127.0.0.1:5000")
+        app.run(debug=True)
+

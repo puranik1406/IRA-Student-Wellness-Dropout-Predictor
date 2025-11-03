@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Beacon{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-lightbulb text-primary" style="font-size: 3rem;"></i>
+                            <h2 class="fw-bold mt-3">Welcome to Beacon</h2>
+                            <p class="text-muted">Student Wellness & Dropout Prevention</p>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="mb-3">
+                                <label for="user_type" class="form-label">Login As</label>
+                                <select class="form-select" id="user_type" name="user_type"
+                                        required>
+                                    <option value="student">Student</option>
+                                    <option value="counselor">Counselor</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       placeholder="Enter your email" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password"
+                                       name="password"
+                                       placeholder="Enter your password" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </button>
+
+                            <div class="text-center">
+                                <p class="text-muted mb-2">Don't have an account?</p>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{{ url_for('register') }}"
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-person-plus"></i> Register as Student
+                                    </a>
+                                    <a href="{{ url_for('counselor_register') }}"
+                                       class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-heart-pulse"></i> Register as Counselor
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-info mb-0">
+                            <small>
+                                <strong>Demo Credentials:</strong><br>
+                                <strong>Student:</strong> aarav@student.edu / student123<br>
+                                <strong>Counselor:</strong> counselor@beacon.edu / counselor123
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
