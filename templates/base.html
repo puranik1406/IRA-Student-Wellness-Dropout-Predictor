@@ -3,20 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Beacon - Student Wellness{% endblock %}</title>
+    <title>{% block title %}IRA - Student Wellness{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
           rel="stylesheet">
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            transition: opacity 0.5s ease-in-out;
+            background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+        }
+
+        .page-transition-fade-out {
+            opacity: 0;
+        }
+
+        .auth-nav {
+            background-color: rgba(255, 255, 255, 0.7) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-nav .nav-link, .auth-nav .navbar-brand {
+            color: #333 !important;
+            font-weight: 600;
+        }
+        
+        .auth-nav .nav-link:hover {
+            color: #0d6efd !important;
+        }
+
+        .auth-nav .btn-outline-dark {
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        
+        .landing-logo {
+            width: 100px;
+        }
+    </style>
+    {% endblock %}
 </head>
 <body>
 {% if session.get('user_id') %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-light auth-nav fixed-top">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="/">
-            <i class="bi bi-lightbulb"></i> Beacon
+        <a class="navbar-brand fw-bold" href="{{ url_for('landing') }}">
+            IRA
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarNav">
@@ -49,24 +87,56 @@
                 </li>
                 {% endif %}
             </ul>
-            <div class="d-flex align-items-center text-white">
-                    <span class="me-3">
-                        <i class="bi bi-person-circle"></i> {{ session.get('user_name') }}
-                    </span>
-                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-dark btn-sm position-relative me-2"
+                        onclick="toggleNotifications()" id="notificationBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          id="notificationBadge"
+                          style="display: none;">0</span>
+                </button>
+                <span class="navbar-text me-3 fw-bold">
+                    <i class="bi bi-person-circle"></i> {{ session.get('user_name') }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-dark btn-sm">
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </a>
             </div>
         </div>
     </div>
 </nav>
+
+<!-- Notification Panel (For All Logged-in Users) -->
+<div class="card position-fixed shadow-lg"
+     id="notificationPanel"
+     style="display: none; width: 400px; max-height: 500px; overflow-y: auto; z-index: 9999; top: 100px; right: 20px;">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-bell"></i> Notifications</h6>
+        <button type="button" class="btn-close btn-close-white"
+                onclick="toggleNotifications()"></button>
+    </div>
+    <div class="card-body p-0" id="notificationList">
+        <p class="text-center text-muted p-3">No notifications</p>
+    </div>
+</div>
+
+<div style="padding-top: 70px;">
+    {% else %}
+    <nav class="navbar navbar-expand-lg navbar-light auth-nav fixed-top">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
 {% endif %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 <div class="container mt-3">
     {% for category, message in messages %}
-    <div class="alert alert-{{ 'danger' if category == 'error' else 'info' if category == 'info' else 'success' }} alert-dismissible fade show"
+    <div class="alert alert-{{ 'danger' if category == 'error' else 'info' if category == 'info' else 'success' }} alert-dismissible fade show rounded-pill"
          role="alert">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -76,12 +146,179 @@
 {% endif %}
 {% endwith %}
 
-<main>
+    <main class="container py-4">
     {% block content %}{% endblock %}
 </main>
 
+    {% if session.get('user_id') %}
+</div>
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Smooth page transitions
+        document.body.style.opacity = 1;
+        const links = document.querySelectorAll('a:not([href^="#"])');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href && !this.hasAttribute('data-bs-toggle') && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    document.body.style.opacity = 0;
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 300);
+                }
+            });
+        });
+        
+        // Load notifications for logged-in users
+        {% if session.get('user_id') %}
+        loadNotifications();
+        // Refresh notifications every 30 seconds
+        setInterval(loadNotifications, 30000);
+        {% endif %}
+    });
+    
+    // Notification functions
+    function loadNotifications() {
+        fetch('/notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateNotificationBadge(data.unread_count);
+                    displayNotifications(data.notifications);
+                }
+            })
+            .catch(error => console.error('Error loading notifications:', error));
+    }
+
+    function updateNotificationBadge(count) {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    function displayNotifications(notifications) {
+        const list = document.getElementById('notificationList');
+        
+        if (notifications.length === 0) {
+            list.innerHTML = '<p class="text-center text-muted p-3">No notifications</p>';
+            return;
+        }
+        
+        list.innerHTML = '';
+        notifications.forEach(notification => {
+            const item = document.createElement('div');
+            item.className = `notification-item ${notification.is_read ? '' : 'unread'}`;
+            item.style.padding = '12px';
+            item.style.borderBottom = '1px solid #f0f0f0';
+            item.style.cursor = 'pointer';
+            item.style.transition = 'background 0.2s ease';
+            
+            if (!notification.is_read) {
+                item.style.background = '#fff9e6';
+                item.style.borderLeft = '3px solid #ffc107';
+            }
+            
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 small fw-bold">${notification.title}</h6>
+                        <p class="mb-1 small text-muted">${notification.message}</p>
+                        <small class="text-muted"><i class="bi bi-clock"></i> ${formatDate(notification.created_at)}</small>
+                    </div>
+                    ${!notification.is_read ? '<span class="badge bg-danger">New</span>' : ''}
+                </div>
+            `;
+            
+            item.addEventListener('mouseenter', () => {
+                item.style.background = '#f8f9fa';
+            });
+            
+            item.addEventListener('mouseleave', () => {
+                if (!notification.is_read) {
+                    item.style.background = '#fff9e6';
+                } else {
+                    item.style.background = 'white';
+                }
+            });
+            
+            item.addEventListener('click', () => {
+                markNotificationRead(notification.id);
+                toggleNotifications();
+                
+                // Navigate to link if available
+                if (notification.link) {
+                    window.location.href = notification.link;
+                }
+            });
+            
+            list.appendChild(item);
+        });
+    }
+
+    function toggleNotifications() {
+        const panel = document.getElementById('notificationPanel');
+        const backdrop = document.getElementById('notificationBackdrop');
+        
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            
+            // Create backdrop if it doesn't exist
+            if (!backdrop) {
+                const newBackdrop = document.createElement('div');
+                newBackdrop.id = 'notificationBackdrop';
+                newBackdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 9998; display: block;';
+                newBackdrop.onclick = toggleNotifications;
+                document.body.appendChild(newBackdrop);
+            } else {
+                backdrop.style.display = 'block';
+            }
+        } else {
+            panel.style.display = 'none';
+            if (backdrop) {
+                backdrop.style.display = 'none';
+            }
+        }
+    }
+
+    function markNotificationRead(notificationId) {
+        fetch(`/mark_notification_read/${notificationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotifications();
+            }
+        })
+        .catch(error => console.error('Error marking notification as read:', error));
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        
+        return date.toLocaleDateString();
+    }
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

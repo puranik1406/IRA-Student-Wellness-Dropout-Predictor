@@ -2,3 +2,21 @@ Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Werkzeug==3.0.1
 python-dotenv==1.0.0
+
+# AI/ML dependencies
+transformers>=4.36.0
+torch>=2.6.0
+scikit-learn>=1.3.2
+numpy>=1.24.3
+pandas>=2.1.3
+sentencepiece>=0.1.99
+
+# Optional: TabPFN for advanced tabular classification
+# If installation fails, the system will fall back to RandomForest
+tabpfn>=0.1.10
+
+# Testing
+requests>=2.31.0
+
+# Google Gemini API
+google-generativeai>=0.3.0

@@ -1,5 +1,5 @@
 @echo off
-echo Starting Beacon - Student Dropout Prevention System
+echo Starting IRA - Intuitive Reflection and Alert
 echo.
 
 REM Activate virtual environment
@@ -10,7 +10,7 @@ echo Installing/checking dependencies...
 pip install -r requirements.txt --quiet
 
 REM Check if database exists
-if not exist "instance\beacon.db" (
+if not exist "instance\ira.db" (
     echo.
     echo Database not found! Creating database...
     python create_database.py

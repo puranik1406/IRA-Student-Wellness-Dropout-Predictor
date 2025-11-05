@@ -1,14 +1,52 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, Response, stream_with_context
 import sqlite3
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import google.generativeai as genai
+import json
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'beacon_secret_key')
-app.config['DATABASE'] = 'instance/beacon.db'
+app.secret_key = os.getenv('SECRET_KEY', 'ira_secret_key')
+app.config['DATABASE'] = 'instance/ira.db'
+
+# Initialize AI models at startup
+emotion_analyzer = None
+dropout_predictor = None
+
+# Configure Gemini API
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_API_KEY and GEMINI_API_KEY != 'your_gemini_api_key_here':
+    genai.configure(api_key=GEMINI_API_KEY)
+    print("✅ Gemini API configured successfully")
+else:
+    print("⚠️ Gemini API key not found. Chatbot will use fallback responses.")
+
+def initialize_ai_models():
+    """Initialize AI models at application startup"""
+    global emotion_analyzer, dropout_predictor
+    
+    try:
+        print("🤖 Initializing AI models...")
+        
+        # Initialize emotion analyzer
+        from ai_models.emotion_model import EmotionAnalyzer
+        emotion_analyzer = EmotionAnalyzer()
+        print("✅ Emotion analyzer loaded successfully")
+        
+        # Initialize dropout risk predictor
+        from ai_models.tabular_model import DropoutRiskPredictor
+        dropout_predictor = DropoutRiskPredictor()
+        print("✅ Dropout risk predictor loaded successfully")
+        
+        print("🎉 All AI models initialized successfully!")
+        return True
+    except Exception as e:
+        print(f"⚠️ Error initializing AI models: {e}")
+        print("The application will continue with basic functionality.")
+        return False
 
 def get_db():
     """Connect to the database"""
@@ -58,7 +96,7 @@ def calculate_risk_score(student_id):
         WHERE student_id = ?
     ''', (student_id,))
     attendance_data = cursor.fetchone()
-    avg_attendance = attendance_data['avg_attendance'] if attendance_data else 100
+    avg_attendance = attendance_data['avg_attendance'] if attendance_data and attendance_data['avg_attendance'] is not None else 100
     
     if avg_attendance < 70:
         risk_score += 30
@@ -167,6 +205,17 @@ def get_wellness_tips(risk_level, factors):
     
     return tips
 
+# System prompt for Ira.ai
+SYSTEM_PROMPT = """You are Ira.ai, an AI wellbeing companion built for students. Your goal is to support their emotional, academic, and physical wellbeing.
+
+Respond empathetically, with warmth and understanding.
+Keep responses concise, human-like, and natural — like a supportive senior or mentor.
+Never sound robotic or overly formal.
+When asked academic or motivational questions, offer guidance while maintaining a friendly tone.
+If students share stress, anxiety, or confusion, respond gently and offer actionable suggestions (like relaxation tips or time management help).
+Always maintain a positive, respectful, and privacy-conscious tone.
+Keep responses under 150 words unless specifically asked for more detail."""
+
 @app.route('/')
 def index():
     """Home page - shows landing page or redirects if logged in"""
@@ -175,6 +224,11 @@ def index():
             return redirect(url_for('student_dashboard', id=session['user_id']))
         elif session.get('user_type') == 'counselor':
             return redirect(url_for('counselor_dashboard'))
+    return render_template('landing.html')
+
+@app.route('/landing')
+def landing():
+    """Landing page - always shows landing regardless of login status"""
     return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -291,7 +345,7 @@ def counselor_register():
             session['user_type'] = 'counselor'
             
             conn.close()
-            flash('Registration successful! Welcome to Beacon.', 'success')
+            flash('Registration successful! Welcome to IRA.', 'success')
             return redirect(url_for('counselor_dashboard'))
         except sqlite3.IntegrityError as e:
             conn.close()
@@ -680,12 +734,230 @@ def student_details(id):
         'attendance': attendance
     })
 
+@app.route('/analyze_mood', methods=['POST'])
+def analyze_mood():
+    """
+    Analyze emotion/mood from journal text using AI model
+    Accepts: { "text": "journal entry..." }
+    Returns: { "emotion": "sadness", "score": 0.87, "all_emotions": [...] }
+    """
+    global emotion_analyzer
+    
+    if not emotion_analyzer:
+        return jsonify({
+            'success': False,
+            'error': 'Emotion analyzer not initialized'
+        }), 503
+    
+    try:
+        data = request.get_json()
+        
+        if not data or 'text' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing "text" field in request body'
+            }), 400
+        
+        text = data['text']
+        
+        if not text or not text.strip():
+            return jsonify({
+                'success': False,
+                'error': 'Text cannot be empty'
+            }), 400
+        
+        # Analyze emotion
+        result = emotion_analyzer.analyze(text)
+        
+        return jsonify({
+            'success': True,
+            'emotion': result['emotion'],
+            'score': result['score'],
+            'all_emotions': result.get('all_emotions', [])
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/predict_dropout', methods=['POST'])
+def predict_dropout():
+    """
+    Predict dropout risk using tabular classification model
+    Accepts: JSON with student features (numeric + mood/emotion features)
+    Returns: { "risk_score": 0.78, "risk_category": "high", "explanation": [...] }
+    """
+    global dropout_predictor, emotion_analyzer
+    
+    if not dropout_predictor:
+        return jsonify({
+            'success': False,
+            'error': 'Dropout predictor not initialized'
+        }), 503
+    
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing request body'
+            }), 400
+        
+        # Extract student data
+        student_data = {
+            'cgpa': data.get('cgpa', 7.0),
+            'attendance_percentage': data.get('attendance_percentage', 85.0),
+            'fee_pending': data.get('fee_pending', False),
+            'mood_score': data.get('mood_score', 6.5),
+            'activities_per_week': data.get('activities_per_week', 3.0),
+            'semester': data.get('semester', 4)
+        }
+        
+        # Handle emotion data
+        emotion_data = None
+        
+        # Option 1: Emotion data provided directly
+        if 'emotion_data' in data:
+            emotion_data = data['emotion_data']
+        
+        # Option 2: Text provided for emotion analysis
+        elif 'text' in data and emotion_analyzer:
+            text = data['text']
+            if text and text.strip():
+                emotion_data = emotion_analyzer.analyze(text)
+        
+        # Option 3: Individual emotion scores provided
+        elif any(key in data for key in ['emotion_joy', 'emotion_sadness', 'emotion_anger', 'emotion_fear']):
+            emotion_data = {
+                'all_emotions': [
+                    {'emotion': 'joy', 'score': data.get('emotion_joy', 0.0)},
+                    {'emotion': 'sadness', 'score': data.get('emotion_sadness', 0.0)},
+                    {'emotion': 'anger', 'score': data.get('emotion_anger', 0.0)},
+                    {'emotion': 'fear', 'score': data.get('emotion_fear', 0.0)}
+                ]
+            }
+        
+        # Make prediction
+        result = dropout_predictor.predict(student_data, emotion_data)
+        
+        return jsonify({
+            'success': True,
+            'risk_score': result['risk_score'],
+            'risk_category': result['risk_category'],
+            'explanation': result['explanation'],
+            'risk_probabilities': result.get('risk_probabilities', {})
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    """
+    Gemini AI Chatbot endpoint - streams responses in real-time
+    Accepts: { "message": "user message" }
+    Returns: Server-Sent Events stream
+    """
+    if 'user_id' not in session or session.get('user_type') != 'student':
+        return jsonify({
+            'success': False,
+            'error': 'Unauthorized'
+        }), 401
+    
+    try:
+        data = request.get_json()
+        
+        if not data or 'message' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing "message" in request body'
+            }), 400
+        
+        user_message = data['message']
+        
+        if not user_message.strip():
+            return jsonify({
+                'success': False,
+                'error': 'Message cannot be empty'
+            }), 400
+        
+        # Check if Gemini is configured
+        if not GEMINI_API_KEY or GEMINI_API_KEY == 'your_gemini_api_key_here':
+            # Fallback response
+            return jsonify({
+                'success': True,
+                'response': "Hi! I'm Ira, your wellbeing companion. 🧸 I'm here to support you! (Note: Gemini API key not configured - using fallback mode)",
+                'model': 'fallback'
+            })
+        
+        def generate():
+            try:
+                # Initialize Gemini model
+                model = genai.GenerativeModel('gemini-2.0-flash')
+                
+                # Create chat with system prompt
+                chat = model.start_chat(history=[
+                    {
+                        'role': 'user',
+                        'parts': [SYSTEM_PROMPT]
+                    },
+                    {
+                        'role': 'model',
+                        'parts': ["I understand. I'm Ira.ai, here to support students with empathy and warmth. I'll keep my responses natural, concise, and helpful. How can I help you today?"]
+                    }
+                ])
+                
+                # Stream response
+                response = chat.send_message(user_message, stream=True)
+                
+                for chunk in response:
+                    if chunk.text:
+                        # Send chunk as JSON
+                        yield f"data: {json.dumps({'chunk': chunk.text})}\n\n"
+                
+                # Send completion signal
+                yield f"data: {json.dumps({'done': True})}\n\n"
+                
+            except Exception as e:
+                # Log the actual error for debugging
+                print(f"❌ Gemini Error: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                
+                error_msg = f"I apologize, but I encountered an error. Please try again. 🧸"
+                yield f"data: {json.dumps({'chunk': error_msg, 'error': True})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
+        
+        return Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no'
+            }
+        )
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Check if database exists
-    if not os.path.exists('instance/beacon.db'):
+    if not os.path.exists('instance/ira.db'):
         print("⚠️  Database not found. Please run 'python create_database.py' first.")
     else:
-        print("🚀 Starting Beacon - Student Dropout Prevention System")
-        print("📍 Access the application at: http://127.0.0.1:5000")
-        app.run(debug=True)
-
+        if initialize_ai_models():
+            print("🚀 Starting IRA - Intuitive Reflection and Alert")
+            print("📍 Access the application at: http://127.0.0.1:5000")
+            app.run(debug=True)
+        else:
+            print("The application will continue with basic functionality.")
+            app.run(debug=True)

@@ -1,4 +1,4 @@
-// Main JavaScript file for Beacon
+// Main JavaScript file for IRA
 
 // Auto-dismiss alerts after 5 seconds
 document.addEventListener('DOMContentLoaded', function() {
@@ -133,6 +133,6 @@ function printPage() {
 }
 
 // Console welcome message
-console.log('%cBeacon 🔆', 'font-size: 24px; color: #0d6efd; font-weight: bold;');
-console.log('%cStudent Dropout Prevention System', 'font-size: 14px; color: #6c757d;');
+console.log('%cIRA 🔆', 'font-size: 24px; color: #0d6efd; font-weight: bold;');
+console.log('%cIntuitive Reflection and Alert', 'font-size: 14px; color: #6c757d;');
 console.log('%cBuilt with Flask & Bootstrap', 'font-size: 12px; color: #adb5bd;');

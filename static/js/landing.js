@@ -97,5 +97,5 @@ window.addEventListener('scroll', function() {
 });
 
 // Console welcome message
-console.log('%c✨ Beacon - Illuminating the Path to Student Success ✨', 'font-size: 16px; color: #A7C7E7; font-weight: bold;');
+console.log('%c✨ IRA - Illuminating the Path to Student Success ✨', 'font-size: 16px; color: #A7C7E7; font-weight: bold;');
 console.log('%cBuilt with passion by Ishita, Spoorthi, Mahek & Geethanjali', 'font-size: 12px; color: #2E3A59;');

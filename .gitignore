@@ -70,3 +70,4 @@ htmlcov/
 # Temporary files
 *.tmp
 *.bak
+*.cache

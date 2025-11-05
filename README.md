@@ -1,4 +1,4 @@
-# 🔆 Beacon - Student Dropout Prevention System
+# 🔆 IRA (Intuitive Reflection and Alert) - Student Dropout Prevention System
 
 A comprehensive Flask web application that predicts and prevents college/university dropouts using
 AI-powered analysis of academics, attendance, fee payments, and mental health patterns.
@@ -10,7 +10,8 @@ AI-powered analysis of academics, attendance, fee payments, and mental health pa
 
 ## 👥 Founders
 
-**Beacon** was created by a passionate team of students dedicated to improving educational outcomes:
+**IRA (Intuitive Reflection and Alert)** was created by a passionate team of students dedicated to
+improving educational outcomes:
 
 - **Ishita Puranik** - [ishitapurk14@gmail.com](mailto:ishitapurk14@gmail.com)
 - **Spoorthi Chava** - [spoorthichava06@gmail.com](mailto:spoorthichava06@gmail.com)
@@ -28,7 +29,10 @@ AI-powered analysis of academics, attendance, fee payments, and mental health pa
   data)
 - **📅 Attendance Tracking**: Monthly attendance records with visual indicators
 - **🤖 AI Wellness Insights**: Personalized tips delivered via carousel based on risk factors
+- **💬 AI Chatbot (Gemini)**: 24/7 voice-enabled wellbeing companion with real-time streaming
+  responses
 - **📞 Counselor Meeting**: One-click scheduling with instant snackbar confirmation
+- **🔔 Notifications**: Real-time notifications when counselors schedule meetings
 
 ### Counselor Interface
 
@@ -41,6 +45,118 @@ AI-powered analysis of academics, attendance, fee payments, and mental health pa
 - **📊 Weekly Trends**: Interactive charts showing mood, sleep, and attendance patterns
 - **📅 Upcoming Sessions**: Track scheduled counselor meetings
 - **📊 Risk Counters**: Quick stats on total students by risk category
+- **🔔 Notifications**: Instant alerts when students request meetings
+
+### 🤖 AI-Powered Features
+
+#### 1. Emotion Detection Model
+
+- **Model
+  **: [j-hartmann/emotion-english-distilroberta-base](https://huggingface.co/j-hartmann/emotion-english-distilroberta-base)
+- **Detects**: Joy, Sadness, Anger, Fear, Surprise, Neutral
+- **Purpose**: Analyze journal entries and text inputs to understand student emotional state
+- **Endpoint**: `POST /analyze_mood`
+
+**Example Usage:**
+
+```python
+# Analyze emotion from journal text
+POST /analyze_mood
+{
+  "text": "I'm feeling really stressed about my exams..."
+}
+
+# Response
+{
+  "emotion": "fear",
+  "score": 0.78,
+  "all_emotions": [...]
+}
+```
+
+#### 2. Dropout Risk Prediction Model
+
+- **Primary Model**: TabPFN-v2 (Prior-Labs)
+- **Fallback**: Random Forest Classifier
+- **Input Features**: CGPA, attendance, fees, mood, activities, emotions, semester
+- **Output**: Risk score (0-1), category (low/moderate/high), detailed explanation
+- **Endpoint**: `POST /predict_dropout`
+
+**Example Usage:**
+
+```python
+# Predict dropout risk
+POST /predict_dropout
+{
+  "cgpa": 6.5,
+  "attendance_percentage": 72.0,
+  "fee_pending": false,
+  "mood_score": 5.0,
+  "activities_per_week": 2.0,
+  "semester": 4,
+  "text": "Feeling overwhelmed lately..."
+}
+
+# Response
+{
+  "risk_score": 0.65,
+  "risk_category": "high",
+  "explanation": [
+    "⚠️ Low CGPA: 6.50 - Needs improvement",
+    "⚠️ Low attendance: 72.0% - Below required 75%",
+    ...
+  ]
+}
+```
+
+#### 3. AI Chatbot (Gemini)
+
+- **Model**: Google Gemini 2.0 Flash
+- **Purpose**: 24/7 empathetic wellbeing companion for students
+- **Features**:
+    - 🎤 **Voice Input** - Speak to the chatbot using Web Speech API
+    - 🔊 **Voice Output** - Responses are read aloud automatically
+    - 💬 **Real-time Streaming** - See responses appear word-by-word
+    - 🧸 **Empathetic Tone** - Warm, supportive, and student-focused responses
+    - 🎯 **Context-Aware** - Understands student wellness needs
+- **Endpoint**: `POST /chat`
+
+**Setup Instructions:**
+
+1. Get a free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Add it to your `.env` file:
+   ```env
+   GEMINI_API_KEY=your_api_key_here
+   ```
+3. Restart the application - the chatbot will automatically activate
+
+**Example Interaction:**
+
+- **Student**: "I'm feeling stressed about my exams"
+- **Ira.ai**: "I understand exam stress can be overwhelming. Here are some tips that might help:
+  Take regular breaks (25-minute study intervals), practice deep breathing exercises, and make sure
+  you're getting enough sleep. Would you like to schedule a meeting with a counselor to talk more
+  about this? 🧸"
+
+**Voice Features:**
+
+- Click 🎤 to speak instead of typing
+- Responses are automatically read aloud
+- Click 🔇 to mute voice output
+- Works in Chrome, Edge, and Safari
+
+**Note**: The chatbot works in fallback mode without an API key (limited responses). For full
+functionality, add your Gemini API key.
+
+**Key Benefits:**
+
+- 🧠 **Real-time emotion analysis** from journal entries
+- 📊 **Multi-factor dropout prediction** using 10+ features
+- 💡 **Explainable AI** with detailed risk factor breakdown
+- 🔄 **Automatic model initialization** on application startup
+- 🎯 **No API keys required** - uses open-source models
+
+For detailed AI documentation, see [ai_models/README.md](ai_models/README.md)
 
 ### Risk Assessment Algorithm
 
@@ -63,18 +179,22 @@ The system uses a multi-factor heuristic approach:
 
 - Python 3.8 or higher
 - pip (Python package manager)
+- Internet connection (for first-time AI model download)
 
 ### Installation
 
-1. **Navigate to the Beacon directory:**
+1. **Navigate to the IRA directory:**
    ```bash
-   cd Beacon
+   cd IRA
    ```
 
 2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
+
+   **Note**: The first run will download AI models (~500MB-1GB). This happens automatically.
+   If TabPFN installation fails, the system falls back to Random Forest (no functionality loss).
 
 3. **Initialize the database:**
    ```bash
@@ -88,8 +208,21 @@ The system uses a multi-factor heuristic approach:
    python app.py
    ```
 
+   Wait for "✅ All AI models initialized successfully!" before accessing the app.
+
 5. **Access the application:**
    Open your browser and go to: `http://127.0.0.1:5000`
+
+### Testing AI Endpoints
+
+To test the AI features:
+
+```bash
+# In a separate terminal (while app.py is running)
+python test_ai_endpoints.py
+```
+
+This will run comprehensive tests on both emotion detection and dropout prediction endpoints.
 
 ## 🔐 Demo Credentials
 
@@ -103,20 +236,27 @@ Other sample students: `priya@student.edu`, `rohan@student.edu`, etc. (all use p
 
 ### Counselor Login
 
-- **Email**: `counselor@beacon.edu`
+- **Email**: `counselor@ira.edu`
 - **Password**: `counselor123`
 
 ## 📁 Project Structure
 
 ```
-Beacon/
+IRA/
 │
 ├── app.py                 # Main Flask application with routes and logic
 ├── create_database.py     # Database initialization script
+├── test_ai_endpoints.py   # AI endpoint testing suite
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Environment variables (not in git)
 ├── .gitignore            # Git ignore rules
 ├── README.md             # This file
+│
+├── ai_models/            # AI/ML models directory
+│   ├── __init__.py       # Package initialization
+│   ├── emotion_model.py  # Emotion detection (Hugging Face)
+│   ├── tabular_model.py  # Dropout risk prediction (TabPFN/RF)
+│   └── README.md         # AI models documentation
 │
 ├── templates/            # HTML templates
 │   ├── base.html         # Base template with navbar
@@ -136,7 +276,7 @@ Beacon/
 │
 ├── uploads/              # File upload directory
 └── instance/
-    └── beacon.db         # SQLite database (created on init)
+    └── ira.db         # SQLite database (created on init)
 ```
 
 ## 🎨 UI/UX Features
@@ -167,6 +307,7 @@ Beacon/
 - Flask 3.0.0 - Web framework
 - SQLite - Database
 - Python-dotenv - Environment management
+- Hugging Face Transformers - AI/ML libraries
 
 **Frontend:**
 
@@ -174,6 +315,14 @@ Beacon/
 - Bootstrap Icons - Icon library
 - Chart.js 4.4.0 - Data visualization
 - Vanilla JavaScript - Interactivity
+
+**AI/ML:**
+
+- Transformers 4.36.0 - Hugging Face transformer models
+- PyTorch 2.1.0 - Deep learning framework
+- scikit-learn 1.3.2 - Machine learning utilities
+- TabPFN 0.1.10 - Tabular classification (optional)
+- NumPy & Pandas - Data processing
 
 **Security:**
 
@@ -199,9 +348,18 @@ Edit `.env` file to customize:
 
 ```env
 SECRET_KEY=your_secret_key_here
-DATABASE_URI=sqlite:///instance/beacon.db
+DATABASE_URI=sqlite:///instance/ira.db
 DEBUG=True
+GEMINI_API_KEY=your_gemini_api_key_here  # For AI chatbot (optional)
 ```
+
+**Environment Variables:**
+
+- `SECRET_KEY`: Flask session secret (change in production)
+- `DATABASE_URI`: Database connection string
+- `DEBUG`: Enable/disable debug mode
+- `GEMINI_API_KEY`: Google Gemini API key for chatbot (get free key
+  at [Google AI Studio](https://makersuite.google.com/app/apikey))
 
 ## 🚀 Deployment
 
@@ -277,7 +435,7 @@ For issues, questions, or suggestions, please open an issue on the project repos
 
 ## 🙏 Acknowledgments
 
-Beacon was developed with passion and dedication by:
+IRA was developed with passion and dedication by:
 
 - Ishita Puranik
 - Spoorthi Chava
@@ -290,8 +448,8 @@ Special thanks to all the students and counselors who provided valuable feedback
 
 **Built with ❤️ for student wellness and success**
 
-*Beacon - Guiding students toward brighter futures* 🔆
+*IRA - Guiding students toward brighter futures* 🔆
 
 ---
 
-**© 2025 Beacon Team. Licensed under the MIT License.**
+**© 2025 IRA Team. Licensed under the MIT License.**

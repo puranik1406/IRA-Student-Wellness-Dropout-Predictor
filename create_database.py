@@ -11,7 +11,7 @@ def create_database():
         os.makedirs('instance')
     
     # Connect to database
-    conn = sqlite3.connect('instance/beacon.db')
+    conn = sqlite3.connect('instance/ira.db')
     cursor = conn.cursor()
     
     # Create students table
@@ -131,7 +131,7 @@ def create_database():
     cursor.execute('''
     INSERT OR IGNORE INTO counselors (name, email, password, phone, employee_id, license_number, specialization, qualifications, experience_years, department)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', ('Dr. Sarah Johnson', 'counselor@beacon.edu', 'counselor123', '9876543210', 'EMP001', 'LIC123456', 'Student Counseling', "Master's in Psychology", 8, 'Student Wellness Center'))
+    ''', ('Dr. Sarah Johnson', 'counselor@ira.edu', 'counselor123', '9876543210', 'EMP001', 'LIC123456', 'Student Counseling', "Master's in Psychology", 8, 'Student Wellness Center'))
     
     # Insert sample students (password: student123 for all)
     students_data = [
@@ -143,6 +143,7 @@ def create_database():
         ('Neha Reddy', 'neha@student.edu', 'student123', 'EC001', 'Electronics', 2, 6.2, 0),
         ('Arjun Gupta', 'arjun@student.edu', 'student123', 'CS004', 'Computer Science', 3, 7.5, 1),
         ('Isha Verma', 'isha@student.edu', 'student123', 'ME002', 'Mechanical Engineering', 4, 8.7, 0),
+        ('Rahul Desai', 'rahul@student.edu', 'student123', 'CS005', 'Computer Science', 3, 5.5, 1),  # HIGH RISK: Low CGPA + Fee pending
     ]
     
     for student in students_data:
@@ -161,7 +162,7 @@ def create_database():
     for student_id in student_ids:
         for i in range(7):
             date = datetime.now() - timedelta(days=i)
-            mood_score = random.randint(3, 10) if student_id not in [2, 4, 6] else random.randint(2, 6)
+            mood_score = random.randint(3, 10) if student_id not in [2, 4, 6, 9] else random.randint(2, 6)
             cursor.execute('''
             INSERT INTO moods (student_id, mood_score, notes, created_at)
             VALUES (?, ?, ?, ?)
@@ -171,9 +172,17 @@ def create_database():
     for student_id in student_ids:
         for i in range(7):
             date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
-            steps = random.randint(3000, 10000)
-            sleep_hours = random.uniform(5.0, 9.0)
-            exercise_minutes = random.randint(0, 60)
+            
+            # High risk students have lower activity levels
+            if student_id in [2, 4, 6, 9]:
+                steps = random.randint(2000, 4000)  # Low activity for high-risk students
+                sleep_hours = random.uniform(5.0, 6.5)  # Poor sleep
+                exercise_minutes = random.randint(0, 20)  # Minimal exercise
+            else:
+                steps = random.randint(5000, 10000)  # Normal activity
+                sleep_hours = random.uniform(6.5, 9.0)  # Good sleep
+                exercise_minutes = random.randint(20, 60)  # Regular exercise
+            
             cursor.execute('''
             INSERT INTO activities (student_id, date, steps, sleep_hours, exercise_minutes)
             VALUES (?, ?, ?, ?, ?)
@@ -184,8 +193,8 @@ def create_database():
     for student_id in student_ids:
         for month in months:
             # High risk students have lower attendance
-            if student_id in [2, 4, 6]:
-                attendance_pct = random.uniform(60, 75)
+            if student_id in [2, 4, 6, 9]:
+                attendance_pct = random.uniform(40, 60)
             else:
                 attendance_pct = random.uniform(80, 95)
             
@@ -212,7 +221,7 @@ def create_database():
         ''', entry)
     
     # Insert some sample meetings
-    for student_id in [2, 4, 6]:
+    for student_id in [2, 4, 6, 9]:
         cursor.execute('''
         INSERT INTO meetings (student_id, counselor_id, status)
         VALUES (?, 1, 'scheduled')
@@ -228,7 +237,7 @@ def create_database():
     print("   Email: aarav@student.edu")
     print("   Password: student123")
     print("\n👨‍⚕️ Counselor Login:")
-    print("   Email: counselor@beacon.edu")
+    print("   Email: counselor@ira.edu")
     print("   Password: counselor123")
 
 if __name__ == '__main__':

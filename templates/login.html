@@ -1,18 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}Login - Beacon{% endblock %}
+{% block title %}Login - IRA{% endblock %}
 
 {% block content %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+<style>
+    body {
+        background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+        font-family: 'Poppins', sans-serif;
+    }
+    .auth-card {
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+    .form-control {
+        border-radius: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+    .form-select {
+        border-radius: 10px;
+    }
+    .btn-primary {
+        border-radius: 50px;
+        font-weight: 600;
+        padding: 0.75rem 2rem;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    .btn-outline-primary, .btn-outline-danger {
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+</style>
+<div class="min-vh-100 d-flex align-items-center justify-content-center">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
-                <div class="card shadow-lg border-0">
+                <div class="card auth-card">
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
-                            <i class="bi bi-lightbulb text-primary" style="font-size: 3rem;"></i>
-                            <h2 class="fw-bold mt-3">Welcome to Beacon</h2>
-                            <p class="text-muted">Student Wellness & Dropout Prevention</p>
+                            <a href="{{ url_for('landing') }}">
+                                <img src="{{ url_for('static', filename='images/ira_logo.png') }}"
+                                     alt="IRA Logo"
+                                     style="max-width: 100px; height: auto; opacity: 0.9; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(150, 150, 255, 0.5));">
+                            </a>
+                            <h2 class="fw-bold mt-3"
+                                style="font-family: 'Poppins', sans-serif; color: #333;">Welcome
+                                Back</h2>
+                            <p class="text-muted">Login to continue your journey with IRA</p>
                         </div>
 
                         <form method="POST" action="{{ url_for('login') }}">
@@ -28,7 +69,7 @@
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address</label>
                                 <input type="email" class="form-control" id="email" name="email"
-                                       placeholder="Enter your email" required>
+                                       placeholder="e.g., student@email.com" required>
                             </div>
 
                             <div class="mb-3">
@@ -38,20 +79,22 @@
                                        placeholder="Enter your password" required>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
-                                <i class="bi bi-box-arrow-in-right"></i> Login
-                            </button>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary py-2 mb-3">
+                                    <i class="bi bi-box-arrow-in-right"></i> &nbsp; Secure Login
+                                </button>
+                            </div>
 
-                            <div class="text-center">
+                            <div class="text-center mt-3">
                                 <p class="text-muted mb-2">Don't have an account?</p>
                                 <div class="d-flex gap-2 justify-content-center">
                                     <a href="{{ url_for('register') }}"
                                        class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-person-plus"></i> Register as Student
+                                        <i class="bi bi-person-plus"></i> Student Signup
                                     </a>
                                     <a href="{{ url_for('counselor_register') }}"
                                        class="btn btn-outline-danger btn-sm">
-                                        <i class="bi bi-heart-pulse"></i> Register as Counselor
+                                        <i class="bi bi-heart-pulse"></i> Counselor Signup
                                     </a>
                                 </div>
                             </div>
@@ -63,7 +106,7 @@
                             <small>
                                 <strong>Demo Credentials:</strong><br>
                                 <strong>Student:</strong> aarav@student.edu / student123<br>
-                                <strong>Counselor:</strong> counselor@beacon.edu / counselor123
+                                <strong>Counselor:</strong> counselor@ira.edu / counselor123
                             </small>
                         </div>
                     </div>
