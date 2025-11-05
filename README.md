@@ -433,15 +433,6 @@ For issues, questions, or suggestions, please open an issue on the project repos
 
 ---
 
-## 🙏 Acknowledgments
-
-IRA was developed with passion and dedication by:
-
-- Ishita Puranik
-- Spoorthi Chava
-- Mahek Muskaan Shaik
-- Geethanjali Bathini
-
 Special thanks to all the students and counselors who provided valuable feedback during development.
 
 ---
@@ -452,4 +443,4 @@ Special thanks to all the students and counselors who provided valuable feedback
 
 ---
 
-**© 2025 IRA Team. Licensed under the MIT License.**
+**© 2025 Beacon Team. Licensed under the MIT License.**
