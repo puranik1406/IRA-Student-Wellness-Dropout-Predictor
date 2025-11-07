@@ -114,17 +114,15 @@
         
         /* Hero Section with Cloud Aura */
         .hero-section {
-            min-height: 100vh;
             position: relative;
             background: linear-gradient(135deg, 
                 rgba(217, 207, 227, 0.9) 0%, 
                 rgba(167, 199, 231, 0.9) 50%, 
                 rgba(199, 233, 192, 0.9) 100%
             );
-            display: flex;
-            align-items: center;
             overflow: hidden;
-            padding-top: 80px;
+            padding: 140px 0 80px 0;
+            min-height: auto;
         }
         
         .hero-overlay {
@@ -284,7 +282,7 @@
         /* Scroll Indicator */
         .scroll-indicator {
             position: absolute;
-            bottom: 30px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 3;
@@ -470,7 +468,7 @@
             }
             
             .hero-section {
-                padding-top: 100px;
+                padding: 100px 0 60px 0;
             }
             
             .cloud-aura {
@@ -537,7 +535,7 @@
 <section class="hero-section">
     <div class="hero-overlay"></div>
     <div class="container">
-        <div class="row align-items-center min-vh-100">
+        <div class="row align-items-center">
             <div class="col-lg-6 hero-content">
                 <h1 class="display-3 fw-bold mb-4 animate-fade-in">
                     Intuitive Reflection and Alert - IRA
@@ -586,221 +584,222 @@
                 <i class="bi bi-chevron-down"></i>
             </a>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Features Section -->
-    <section id="features" class="features-section py-5">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-4 fw-bold mb-3">Comprehensive Student Support</h2>
-                <p class="lead text-muted">Everything students and counselors need in one
-                    platform</p>
+<!-- Features Section -->
+<section id="features" class="features-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-4 fw-bold mb-3">Comprehensive Student Support</h2>
+            <p class="lead text-muted">Everything students and counselors need in one
+                platform</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Risk Assessment</h4>
+                    <p>Advanced AI algorithms analyze multiple factors including attendance,
+                        grades,
+                        and mental health to identify at-risk students early.</p>
+                </div>
             </div>
 
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-graph-up-arrow"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Risk Assessment</h4>
-                        <p>Advanced AI algorithms analyze multiple factors including attendance,
-                            grades,
-                            and mental health to identify at-risk students early.</p>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-emoji-smile"></i>
                     </div>
+                    <h4 class="fw-bold mb-3">Mood Tracking</h4>
+                    <p>Daily mood check-ins help students monitor their mental well-being and
+                        provide valuable insights to counselors.</p>
                 </div>
+            </div>
 
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-emoji-smile"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Mood Tracking</h4>
-                        <p>Daily mood check-ins help students monitor their mental well-being and
-                            provide valuable insights to counselors.</p>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-robot"></i>
                     </div>
+                    <h4 class="fw-bold mb-3">AI Chatbot</h4>
+                    <p>24/7 AI-powered companion provides immediate support, wellness tips, and
+                        guidance whenever students need it.</p>
                 </div>
+            </div>
 
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-robot"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">AI Chatbot</h4>
-                        <p>24/7 AI-powered companion provides immediate support, wellness tips, and
-                            guidance whenever students need it.</p>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-journal-text"></i>
                     </div>
+                    <h4 class="fw-bold mb-3">Digital Journaling</h4>
+                    <p>Private journaling space helps students express thoughts and emotions,
+                        promoting self-reflection and emotional wellness.</p>
                 </div>
+            </div>
 
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-journal-text"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Digital Journaling</h4>
-                        <p>Private journaling space helps students express thoughts and emotions,
-                            promoting self-reflection and emotional wellness.</p>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-calendar-heart"></i>
                     </div>
+                    <h4 class="fw-bold mb-3">Counseling Sessions</h4>
+                    <p>Easy scheduling and management of one-on-one counseling sessions between
+                        students and professional counselors.</p>
                 </div>
+            </div>
 
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-calendar-heart"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Counseling Sessions</h4>
-                        <p>Easy scheduling and management of one-on-one counseling sessions between
-                            students and professional counselors.</p>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-lightbulb"></i>
                     </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-lightbulb"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Wellness Insights</h4>
-                        <p>Personalized recommendations and wellness tips based on individual
-                            student
-                            data and behavioral patterns.</p>
-                    </div>
+                    <h4 class="fw-bold mb-3">Wellness Insights</h4>
+                    <p>Personalized recommendations and wellness tips based on individual
+                        student
+                        data and behavioral patterns.</p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- How It Works Section -->
-    <section id="how-it-works" class="how-it-works-section py-5">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-4 fw-bold mb-3">How IRA Works</h2>
-                <p class="lead text-muted">A simple, effective approach to student wellness</p>
+<!-- How It Works Section -->
+<section id="how-it-works" class="how-it-works-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-4 fw-bold mb-3">How IRA Works</h2>
+            <p class="lead text-muted">A simple, effective approach to student wellness</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h5 class="fw-bold mb-3">Data Collection</h5>
+                    <p>System gathers attendance, academic performance, and wellness data from
+                        multiple sources.</p>
+                </div>
             </div>
 
-            <div class="row g-4">
-                <div class="col-md-3">
-                    <div class="step-card">
-                        <div class="step-number">1</div>
-                        <h5 class="fw-bold mb-3">Data Collection</h5>
-                        <p>System gathers attendance, academic performance, and wellness data from
-                            multiple sources.</p>
-                    </div>
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h5 class="fw-bold mb-3">AI Analysis</h5>
+                    <p>Advanced algorithms analyze patterns and calculate dropout risk scores
+                        for
+                        each student.</p>
                 </div>
+            </div>
 
-                <div class="col-md-3">
-                    <div class="step-card">
-                        <div class="step-number">2</div>
-                        <h5 class="fw-bold mb-3">AI Analysis</h5>
-                        <p>Advanced algorithms analyze patterns and calculate dropout risk scores
-                            for
-                            each student.</p>
-                    </div>
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h5 class="fw-bold mb-3">Early Intervention</h5>
+                    <p>Counselors are alerted about at-risk students and can provide timely
+                        support
+                        and guidance.</p>
                 </div>
+            </div>
 
-                <div class="col-md-3">
-                    <div class="step-card">
-                        <div class="step-number">3</div>
-                        <h5 class="fw-bold mb-3">Early Intervention</h5>
-                        <p>Counselors are alerted about at-risk students and can provide timely
-                            support
-                            and guidance.</p>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="step-card">
-                        <div class="step-number">4</div>
-                        <h5 class="fw-bold mb-3">Continuous Support</h5>
-                        <p>Ongoing monitoring and personalized wellness recommendations keep
-                            students on
-                            track.</p>
-                    </div>
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h5 class="fw-bold mb-3">Continuous Support</h5>
+                    <p>Ongoing monitoring and personalized wellness recommendations keep
+                        students on
+                        track.</p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Founders Section -->
-    <section id="founders" class="founders-section py-5">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-4 fw-bold mb-3">Meet Our Founders</h2>
-                <p class="lead text-muted">Passionate students dedicated to improving educational
-                    outcomes</p>
+<!-- Founders Section -->
+<section id="founders" class="founders-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-4 fw-bold mb-3">Meet Our Founders</h2>
+            <p class="lead text-muted">Passionate students dedicated to improving educational
+                outcomes</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-6 col-lg-3">
+                <div class="founder-card">
+                    <div class="founder-avatar">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Ishita Puranik</h5>
+                    <p class="text-muted small mb-3">Co-Founder</p>
+                    <a href="mailto:ishitapurk14@gmail.com" class="founder-email">
+                        <i class="bi bi-envelope-fill"></i> ishitapurk14@gmail.com
+                    </a>
+                </div>
             </div>
 
-            <div class="row g-4 justify-content-center">
-                <div class="col-md-6 col-lg-3">
-                    <div class="founder-card">
-                        <div class="founder-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <h5 class="fw-bold mb-2">Ishita Puranik</h5>
-                        <p class="text-muted small mb-3">Co-Founder</p>
-                        <a href="mailto:ishitapurk14@gmail.com" class="founder-email">
-                            <i class="bi bi-envelope-fill"></i> ishitapurk14@gmail.com
-                        </a>
+            <div class="col-md-6 col-lg-3">
+                <div class="founder-card">
+                    <div class="founder-avatar">
+                        <i class="bi bi-person-circle"></i>
                     </div>
+                    <h5 class="fw-bold mb-2">Spoorthi Chava</h5>
+                    <p class="text-muted small mb-3">Co-Founder</p>
+                    <a href="mailto:spoorthichava06@gmail.com" class="founder-email">
+                        <i class="bi bi-envelope-fill"></i> spoorthichava06@gmail.com
+                    </a>
                 </div>
+            </div>
 
-                <div class="col-md-6 col-lg-3">
-                    <div class="founder-card">
-                        <div class="founder-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <h5 class="fw-bold mb-2">Spoorthi Chava</h5>
-                        <p class="text-muted small mb-3">Co-Founder</p>
-                        <a href="mailto:spoorthichava06@gmail.com" class="founder-email">
-                            <i class="bi bi-envelope-fill"></i> spoorthichava06@gmail.com
-                        </a>
+            <div class="col-md-6 col-lg-3">
+                <div class="founder-card">
+                    <div class="founder-avatar">
+                        <i class="bi bi-person-circle"></i>
                     </div>
+                    <h5 class="fw-bold mb-2">Mahek Muskaan Shaik</h5>
+                    <p class="text-muted small mb-3">Co-Founder</p>
+                    <a href="mailto:mahekm.shaik@gmail.com" class="founder-email">
+                        <i class="bi bi-envelope-fill"></i> mahekm.shaik@gmail.com
+                    </a>
                 </div>
+            </div>
 
-                <div class="col-md-6 col-lg-3">
-                    <div class="founder-card">
-                        <div class="founder-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <h5 class="fw-bold mb-2">Mahek Muskaan Shaik</h5>
-                        <p class="text-muted small mb-3">Co-Founder</p>
-                        <a href="mailto:mahekm.shaik@gmail.com" class="founder-email">
-                            <i class="bi bi-envelope-fill"></i> mahekm.shaik@gmail.com
-                        </a>
+            <div class="col-md-6 col-lg-3">
+                <div class="founder-card">
+                    <div class="founder-avatar">
+                        <i class="bi bi-person-circle"></i>
                     </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3">
-                    <div class="founder-card">
-                        <div class="founder-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <h5 class="fw-bold mb-2">Geethanjali Bathini</h5>
-                        <p class="text-muted small mb-3">Co-Founder</p>
-                        <a href="mailto:geethanjalibathini7@gmail.com" class="founder-email">
-                            <i class="bi bi-envelope-fill"></i> geethanjalibathini7@gmail.com
-                        </a>
-                    </div>
+                    <h5 class="fw-bold mb-2">Geethanjali Bathini</h5>
+                    <p class="text-muted small mb-3">Co-Founder</p>
+                    <a href="mailto:geethanjalibathini7@gmail.com" class="founder-email">
+                        <i class="bi bi-envelope-fill"></i> geethanjalibathini7@gmail.com
+                    </a>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="footer py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6 text-center text-md-start">
-                    <p class="mb-0">&copy; 2025 IRA - Intuitive Reflection and Alert. All rights
-                        reserved.</p>
-                </div>
-                <div class="col-md-6 text-center text-md-end">
-                    <p class="mb-0">Built with ❤️ for student success</p>
-                </div>
+<!-- Footer -->
+<footer class="footer py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="mb-0">&copy; 2025 IRA - Intuitive Reflection and Alert. All rights
+                    reserved.</p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <p class="mb-0">Built with ❤️ for student success</p>
             </div>
         </div>
-    </footer>
+    </div>
+</footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </body>
 </html>
