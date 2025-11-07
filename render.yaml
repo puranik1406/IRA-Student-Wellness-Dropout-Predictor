@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ira-studentwellness
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && python create_database.py
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: RENDER
+        value: true
+      - key: GEMINI_API_KEY
+        sync: false
+    autoDeploy: true
