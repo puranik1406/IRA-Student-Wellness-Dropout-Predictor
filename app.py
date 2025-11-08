@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import google.generativeai as genai
 import json
+import threading
 
 load_dotenv()
 
@@ -37,7 +38,7 @@ init_db()
 # Initialize AI models at startup
 emotion_analyzer = None
 dropout_predictor = None
-
+ai_models_loading = True  # Flag to track loading status
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -49,10 +50,10 @@ else:
 
 def initialize_ai_models():
     """Initialize AI models at application startup"""
-    global emotion_analyzer, dropout_predictor
+    global emotion_analyzer, dropout_predictor, ai_models_loading
     
     try:
-        print("🤖 Initializing AI models...")
+        print("Initializing AI models in background...")
         
         # Initialize emotion analyzer
         from ai_models.emotion_model import EmotionAnalyzer
@@ -62,14 +63,22 @@ def initialize_ai_models():
         # Initialize dropout risk predictor
         from ai_models.tabular_model import DropoutRiskPredictor
         dropout_predictor = DropoutRiskPredictor()
-        print("✅ Dropout risk predictor loaded successfully")
+        print("Dropout risk predictor loaded successfully")
         
-        print("🎉 All AI models initialized successfully!")
+        ai_models_loading = False
+        print("All AI models initialized successfully!")
         return True
     except Exception as e:
-        print(f"⚠️ Error initializing AI models: {e}")
+        print(f"Error initializing AI models: {e}")
         print("The application will continue with basic functionality.")
+        ai_models_loading = False
         return False
+
+def initialize_ai_models_background():
+    """Start AI model initialization in background thread"""
+    thread = threading.Thread(target=initialize_ai_models, daemon=True)
+    thread.start()
+    print("AI models loading in background (app starting immediately)...")
 
 def get_db():
     """Connect to the database"""
@@ -764,7 +773,13 @@ def analyze_mood():
     Accepts: { "text": "journal entry..." }
     Returns: { "emotion": "sadness", "score": 0.87, "all_emotions": [...] }
     """
-    global emotion_analyzer
+    global emotion_analyzer, ai_models_loading
+    
+    if ai_models_loading:
+        return jsonify({
+            'success': False,
+            'error': 'AI models are still loading. Please try again in a moment.'
+        }), 503
     
     if not emotion_analyzer:
         return jsonify({
@@ -812,7 +827,13 @@ def predict_dropout():
     Accepts: JSON with student features (numeric + mood/emotion features)
     Returns: { "risk_score": 0.78, "risk_category": "high", "explanation": [...] }
     """
-    global dropout_predictor, emotion_analyzer
+    global dropout_predictor, emotion_analyzer, ai_models_loading
+    
+    if ai_models_loading:
+        return jsonify({
+            'success': False,
+            'error': 'AI models are still loading. Please try again in a moment.'
+        }), 503
     
     if not dropout_predictor:
         return jsonify({
@@ -972,6 +993,15 @@ def chat():
             'error': str(e)
         }), 500
 
+@app.route('/health')
+def health():
+    """Health check endpoint for deployment platforms"""
+    return jsonify({
+        'status': 'healthy',
+        'ai_models_loaded': not ai_models_loading,
+        'database': 'connected'
+    }), 200
+
 if __name__ == '__main__':
     # Use /tmp on Render for database if available
     db_path = '/tmp/ira.db' if os.getenv('RENDER') else 'instance/ira.db'
@@ -982,18 +1012,18 @@ if __name__ == '__main__':
 
     # Create the database if missing
     if not os.path.exists(db_path):
-        print(f"⚙️ Creating new database at {db_path}")
+        print(f"Creating new database at {db_path}")
         from create_database import init_db  # assumes your create_database.py defines init_db()
         init_db(db_path)
-        print("✅ Database initialized successfully.")
+        print("Database initialized successfully.")
     else:
-        print(f"✅ Database found at {db_path}")
+        print(f"Database found at {db_path}")
 
-    # Initialize AI models (if available)
-    if initialize_ai_models():
-        print("🚀 Starting IRA - Intuitive Reflection and Alert")
-    else:
-        print("⚠️ Continuing with basic functionality (AI models not initialized)")
+    # Initialize AI models in background (non-blocking)
+    initialize_ai_models_background()
+    
+    print("Starting IRA - Intuitive Reflection and Alert")
+    print("App starting immediately, AI models loading in background...")
 
     # Run Flask (Render provides PORT)
     port = int(os.environ.get('PORT', 10000))
