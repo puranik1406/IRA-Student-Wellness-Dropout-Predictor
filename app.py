@@ -94,9 +94,16 @@ def get_db():
 
 def ensure_database_exists():
     """Ensure database exists with all tables and sample data"""
+    print("=" * 80)
+    print("DATABASE INITIALIZATION STARTING")
+    print(f"Database path: {app.config['DATABASE']}")
+    print(f"RENDER env var: {os.getenv('RENDER')}")
+    print(f"Database file exists: {os.path.exists(app.config['DATABASE'])}")
+    print("=" * 80)
+    
     # On Render, ALWAYS recreate the database to ensure tables exist
     if os.getenv('RENDER'):
-        print("🔄 Render environment detected - ensuring database is properly initialized...")
+        print("Render environment detected - ensuring database is properly initialized...")
         if os.path.exists(app.config['DATABASE']):
             # Verify tables exist
             try:
@@ -107,24 +114,47 @@ def ensure_database_exists():
                 conn.close()
                 
                 if not table_exists:
-                    print("⚠️ Database file exists but tables are missing! Recreating...")
+                    print("Database file exists but tables are missing! Recreating...")
                     os.remove(app.config['DATABASE'])
                 else:
-                    print("✅ Database verified - all tables exist!")
+                    print("Database verified - all tables exist!")
+                    print("=" * 80)
                     return
             except Exception as e:
-                print(f"⚠️ Error verifying database: {e}")
+                print(f"Error verifying database: {e}")
+                import traceback
+                traceback.print_exc()
                 if os.path.exists(app.config['DATABASE']):
+                    print("Removing corrupted database file...")
                     os.remove(app.config['DATABASE'])
         
         # Create fresh database
         print(f"Creating new database at {app.config['DATABASE']}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"create_database.py exists: {os.path.exists('create_database.py')}")
+        
         try:
+            print("Importing create_database function...")
             from create_database import create_database
+            print("Import successful, calling create_database()...")
             create_database(app.config['DATABASE'])
-            print("✅ Database created successfully with sample data!")
+            print("Database created successfully with sample data!")
+            
+            # Verify it worked
+            if os.path.exists(app.config['DATABASE']):
+                print(f"Database file created successfully at {app.config['DATABASE']}")
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) as count FROM students")
+                count = cursor.fetchone()['count']
+                conn.close()
+                print(f"Verified: {count} students in database")
+            else:
+                print("ERROR: Database file was not created!")
+                raise Exception("Database file was not created")
+                
         except Exception as e:
-            print(f"❌ Error creating database: {e}")
+            print(f"CRITICAL ERROR creating database: {e}")
             import traceback
             traceback.print_exc()
             raise
@@ -135,15 +165,34 @@ def ensure_database_exists():
             try:
                 from create_database import create_database
                 create_database(app.config['DATABASE'])
-                print("✅ Database created successfully with sample data!")
+                print("Database created successfully with sample data!")
             except Exception as e:
-                print(f"Warning: Could not run full database creation: {e}")
+                print(f"Error creating database: {e}")
+                import traceback
+                traceback.print_exc()
                 raise
         else:
-            print(f"✅ Database found at {app.config['DATABASE']}")
+            print(f"Database found at {app.config['DATABASE']}")
+    
+    print("=" * 80)
+    print("DATABASE INITIALIZATION COMPLETED")
+    print("=" * 80)
 
 # Initialize database NOW
-ensure_database_exists()
+print("\n" + "=" * 80)
+print("ATTEMPTING DATABASE INITIALIZATION")
+print("=" * 80)
+try:
+    ensure_database_exists()
+except Exception as e:
+    print(f"\n" + "=" * 80)
+    print("FATAL ERROR DURING DATABASE INITIALIZATION")
+    print("=" * 80)
+    print(f"Error: {e}")
+    import traceback
+    traceback.print_exc()
+    print(f"=" * 80 + "\n")
+    # Don't raise - let app start and show error on first request
 
 def init_db():
     """Initialize database with basic schema"""
