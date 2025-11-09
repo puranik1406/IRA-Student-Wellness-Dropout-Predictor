@@ -21,19 +21,116 @@ os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
 # ✅ Auto-create the DB if missing
 def init_db():
+    """Initialize database with basic schema"""
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users (
+    
+    # Create all tables
+    c.execute('''CREATE TABLE IF NOT EXISTS students (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password TEXT NOT NULL
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL,
+                    roll_number TEXT UNIQUE NOT NULL,
+                    department TEXT NOT NULL,
+                    semester INTEGER NOT NULL,
+                    cgpa REAL DEFAULT 0.0,
+                    fee_pending BOOLEAN DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS counselors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL,
+                    phone TEXT,
+                    employee_id TEXT UNIQUE,
+                    license_number TEXT,
+                    specialization TEXT,
+                    qualifications TEXT,
+                    experience_years INTEGER DEFAULT 0,
+                    department TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS moods (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    mood_score INTEGER NOT NULL,
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (student_id) REFERENCES students(id)
+                );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS journals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (student_id) REFERENCES students(id)
+                );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS activities (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    date DATE NOT NULL,
+                    steps INTEGER DEFAULT 0,
+                    sleep_hours REAL DEFAULT 0.0,
+                    exercise_minutes INTEGER DEFAULT 0,
+                    FOREIGN KEY (student_id) REFERENCES students(id)
+                );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS attendance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    month TEXT NOT NULL,
+                    attendance_percentage REAL NOT NULL,
+                    total_classes INTEGER NOT NULL,
+                    attended_classes INTEGER NOT NULL,
+                    FOREIGN KEY (student_id) REFERENCES students(id)
+                );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS meetings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    counselor_id INTEGER,
+                    status TEXT DEFAULT 'scheduled',
+                    notes TEXT,
+                    scheduled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (student_id) REFERENCES students(id),
+                    FOREIGN KEY (counselor_id) REFERENCES counselors(id)
+                );''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    user_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    link TEXT,
+                    reference_id INTEGER,
+                    is_read BOOLEAN DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );''')
+    
     conn.commit()
     conn.close()
     print(f"✅ Database initialized at {app.config['DATABASE']}")
 
 # Call this once when the app starts
-init_db()
+if not os.path.exists(app.config['DATABASE']):
+    print(f"Creating new database at {app.config['DATABASE']}")
+    try:
+        from create_database import create_database
+        create_database(app.config['DATABASE'])
+    except Exception as e:
+        print(f"Warning: Could not run full database creation: {e}")
+        print("Initializing with basic schema only...")
+        init_db()
+else:
+    print(f"✅ Database found at {app.config['DATABASE']}")
 
 # Initialize AI models at startup
 emotion_analyzer = None
@@ -1013,9 +1110,15 @@ if __name__ == '__main__':
     # Create the database if missing
     if not os.path.exists(db_path):
         print(f"Creating new database at {db_path}")
-        from create_database import init_db  # assumes your create_database.py defines init_db()
-        init_db(db_path)
-        print("Database initialized successfully.")
+        try:
+            from create_database import create_database
+            create_database(db_path)
+        except Exception as e:
+            print(f"Warning: Could not run full database creation: {e}")
+            print("Initializing with basic schema only...")
+            init_db()
+        else:
+            print("Database initialized successfully.")
     else:
         print(f"Database found at {db_path}")
 

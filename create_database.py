@@ -3,15 +3,16 @@ import os
 from datetime import datetime, timedelta
 import random
 
-def create_database():
+def create_database(db_path='instance/ira.db'):
     """Create the database and initialize tables with sample data"""
     
-    # Create instance directory if it doesn't exist
-    if not os.path.exists('instance'):
-        os.makedirs('instance')
+    # Create directory if it doesn't exist
+    db_dir = os.path.dirname(db_path)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir)
     
     # Connect to database
-    conn = sqlite3.connect('instance/ira.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     # Create students table
@@ -230,7 +231,7 @@ def create_database():
     conn.commit()
     conn.close()
     
-    print("✅ Database created successfully!")
+    print(f"✅ Database created successfully at {db_path}!")
     print("📊 Sample data inserted")
     print("\n🔐 Login Credentials:")
     print("\n👨‍🎓 Student Login:")
@@ -241,4 +242,6 @@ def create_database():
     print("   Password: counselor123")
 
 if __name__ == '__main__':
-    create_database()
+    # Check if RENDER environment variable is set
+    db_path = '/tmp/ira.db' if os.getenv('RENDER') else 'instance/ira.db'
+    create_database(db_path)
