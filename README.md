@@ -11,9 +11,6 @@ AI-powered analysis of academics, attendance, fee payments, and mental health pa
 
 Deployed site link : https://ira-studentwellness.onrender.com/
 
-> **⚡ New to IRA?** Check out the [Quick Reference Guide](QUICK_REFERENCE.md) for fast setup
-> instructions!
-
 ## 👥 Founders
 
 **IRA (Intuitive Reflection and Alert)** was created by a passionate team of students dedicated to
@@ -350,7 +347,6 @@ IRA/
 
 ## 🚀 Deployment on Render
 
-> **📖 For detailed step-by-step instructions, see [RENDER_SETUP.md](RENDER_SETUP.md)**
 
 ### Setting up Gemini API Key (for AI Chatbot)
 
@@ -400,16 +396,13 @@ GEMINI_API_KEY=your_gemini_api_key_here  # For AI chatbot
 Choose one of these methods:
 
 ```bash
-# Method 1: Using the included script (easiest!)
-python generate_secret_key.py
-
-# Method 2: Using Python command (recommended)
+# Method 1: Using Python (recommended)
 python -c "import secrets; print(secrets.token_hex(32))"
 
-# Method 3: Using PowerShell (Windows)
+# Method 2: Using PowerShell (Windows)
 -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 64 | % {[char]$_})
 
-# Method 4: Using OpenSSL (Linux/Mac)
+# Method 3: Using OpenSSL (Linux/Mac)
 openssl rand -hex 32
 ```
 
@@ -438,8 +431,10 @@ reasons.
     - Render will automatically detect `render.yaml`
 
 3. **Set up Gemini API Key:**
-    - Follow the instructions in the [Deployment on Render](#-deployment-on-render) section above
-    - Add your `GEMINI_API_KEY` in the Environment tab
+    - Get a free API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+    - Go to Render Dashboard → Your Service → Environment tab
+    - Set the `GEMINI_API_KEY` variable with your API key
+    - Click Save Changes
 
 4. **Deploy:**
     - Render will automatically build and deploy your application
