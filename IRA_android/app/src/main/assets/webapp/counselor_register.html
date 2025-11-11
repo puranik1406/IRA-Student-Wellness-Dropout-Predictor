@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Counselor Registration - IRA{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+        font-family: 'Poppins', sans-serif;
+    }
+    .auth-card {
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+    .form-control, .form-select {
+        border-radius: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+    .btn-danger {
+        border-radius: 50px;
+        font-weight: 600;
+        padding: 0.75rem 2rem;
+        transition: all 0.3s ease;
+    }
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    }
+    h5 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        color: #5a5a5a;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 10px;
+    }
+</style>
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="card auth-card">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <a href="{{ url_for('landing') }}">
+                                <img src="{{ url_for('static', filename='images/ira_logo.png') }}"
+                                     alt="IRA Logo"
+                                     style="max-width: 100px; height: auto; opacity: 0.9; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(150, 150, 255, 0.5));">
+                            </a>
+                            <h2 class="fw-bold mt-3"
+                                style="font-family: 'Poppins', sans-serif; color: #333;">Counselor
+                                Registration</h2>
+                            <p class="text-muted">Join IRA as a Professional Counselor</p>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('counselor_register') }}">
+                            <div class="row">
+                                <!-- Personal Information -->
+                                <div class="col-12">
+                                    <h5 class="text-primary mb-3"><i
+                                            class="bi bi-person-circle"></i> &nbsp;Personal
+                                        Information
+                                    </h5>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="name" name="name"
+                                           placeholder="e.g., Dr. Jane Smith" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           placeholder="e.g., counselor@university.edu" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Phone Number *</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone"
+                                           placeholder="10-digit number" required
+                                           pattern="[0-9]{10}">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="password" class="form-label">Password *</label>
+                                    <input type="password" class="form-control" id="password"
+                                           name="password"
+                                           placeholder="Minimum 6 characters" required
+                                           minlength="6">
+                                </div>
+
+                                <!-- Professional Information -->
+                                <div class="col-12 mt-4">
+                                    <h5 class="text-primary mb-3"><i
+                                            class="bi bi-briefcase-fill"></i> &nbsp;Professional
+                                        Information</h5>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="employee_id" class="form-label">Employee ID
+                                        *</label>
+                                    <input type="text" class="form-control" id="employee_id"
+                                           name="employee_id"
+                                           placeholder="e.g., EMP12345" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="license_number" class="form-label">License Number
+                                        *</label>
+                                    <input type="text" class="form-control" id="license_number"
+                                           name="license_number"
+                                           placeholder="e.g., LPC12345" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="specialization" class="form-label">Specialization
+                                        *</label>
+                                    <select class="form-select" id="specialization"
+                                            name="specialization" required>
+                                        <option value="">Select specialization</option>
+                                        <option value="Clinical Psychology">Clinical Psychology
+                                        </option>
+                                        <option value="Educational Psychology">Educational
+                                            Psychology
+                                        </option>
+                                        <option value="Career Counseling">Career Counseling</option>
+                                        <option value="Mental Health Counseling">Mental Health
+                                            Counseling
+                                        </option>
+                                        <option value="Student Counseling">Student Counseling
+                                        </option>
+                                        <option value="Behavioral Therapy">Behavioral Therapy
+                                        </option>
+                                        <option value="Addiction Counseling">Addiction Counseling
+                                        </option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="qualifications" class="form-label">Highest
+                                        Qualification *</label>
+                                    <select class="form-select" id="qualifications"
+                                            name="qualifications" required>
+                                        <option value="">Select qualification</option>
+                                        <option value="Bachelor's in Psychology">Bachelor's in
+                                            Psychology
+                                        </option>
+                                        <option value="Master's in Psychology">Master's in
+                                            Psychology
+                                        </option>
+                                        <option value="Master's in Counseling">Master's in
+                                            Counseling
+                                        </option>
+                                        <option value="PhD in Psychology">PhD in Psychology</option>
+                                        <option value="PsyD">PsyD (Doctor of Psychology)</option>
+                                        <option value="Licensed Professional Counselor">Licensed
+                                            Professional Counselor
+                                        </option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="experience_years" class="form-label">Years of
+                                        Experience *</label>
+                                    <input type="number" class="form-control" id="experience_years"
+                                           name="experience_years"
+                                           placeholder="Enter years of experience" required min="0"
+                                           max="50">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="department"
+                                           class="form-label">Department/Division</label>
+                                    <input type="text" class="form-control" id="department"
+                                           name="department"
+                                           placeholder="e.g., Student Wellness Center">
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="bi bi-person-plus"></i> &nbsp; Register as Counselor
+                                </button>
+                            </div>
+
+                            <div class="text-center mt-3">
+                                <p class="text-muted mb-0">Already have an account?
+                                    <a href="{{ url_for('login') }}"
+                                       class="text-decoration-none fw-bold">Login here</a>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

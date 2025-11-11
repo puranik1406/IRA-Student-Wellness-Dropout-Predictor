@@ -1,0 +1,907 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ student['name'] }}{% endblock %}
+
+{% block content %}
+<div class="bg-light min-vh-100 py-4">
+    <div class="container">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-12">
+                                <h1 class="mb-1">Welcome back, {{ student['name'] }}! 👋</h1>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-person-badge"></i> {{ student['roll_number'] }}
+                                    |
+                                    {{ student['department'] }} | Semester {{ student['semester'] }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bento Grid - Main Stats (Only Attendance & Fee Status) -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 bg-success text-white">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-calendar-check" style="font-size: 3rem;"></i>
+                        <h2 class="mt-3 mb-0">
+                            {% if attendance %}
+                            {{
+                            "%.1f"|format(attendance|map(attribute='attendance_percentage')|list|sum
+                            / attendance|length) }}%
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </h2>
+                        <p class="mb-0 fs-5">Average Attendance</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 {% if student['fee_pending'] %}bg-warning{% else %}accent-gold{% endif %} text-white">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-currency-dollar" style="font-size: 3rem;"></i>
+                        <h2 class="mt-3 mb-0">{{ 'Pending' if student['fee_pending'] else 'Paid'
+                            }}</h2>
+                        <p class="mb-0 fs-5">Fee Status</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Wellness Insights Carousel -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h4 class="mb-0"><i class="bi bi-lightbulb"></i> AI Wellness Insights</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="wellnessCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                {% for tip in tips %}
+                                <button type="button" data-bs-target="#wellnessCarousel"
+                                        data-bs-slide-to="{{ loop.index0 }}"
+                                        {% if loop.first %}class="active" {% endif %}></button>
+                                {% endfor %}
+                            </div>
+                            <div class="carousel-inner">
+                                {% for tip in tips %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}"
+                                     style="min-height: 200px;">
+                                    <div class="text-center p-5">
+                                        <div style="font-size: 4rem;">{{ tip['icon'] }}</div>
+                                        <h3 class="mt-3 mb-3">{{ tip['title'] }}</h3>
+                                        <p class="lead text-muted">{{ tip['text'] }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button"
+                                    data-bs-target="#wellnessCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                    data-bs-target="#wellnessCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary btn-lg" id="scheduleMeetingBtn">
+                                <i class="bi bi-calendar-plus"></i> Schedule Counselor Meeting
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bento Grid - Data Sections -->
+        <div class="row g-3 mb-4">
+            <!-- Mood Trends -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-emoji-smile"></i> Recent Mood Check-ins
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if moods %}
+                        <div class="list-group list-group-flush">
+                            {% for mood in moods[:5] %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge 
+                                            {% if mood['mood_score'] >= 8 %}bg-success
+                                            {% elif mood['mood_score'] >= 6 %}bg-info
+                                            {% elif mood['mood_score'] >= 4 %}bg-warning
+                                            {% else %}bg-danger{% endif %} me-2">
+                                            {{ mood['mood_score'] }}/10
+                                        </span>
+                                        <small class="text-muted">{{ mood['notes'] }}</small>
+                                    </div>
+                                    <small class="text-muted">{{ mood['created_at'][:10] }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No mood data yet. Start logging your
+                            mood!</p>
+                        {% endif %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('mood') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Log Mood
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity & Sleep -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-activity"></i> Activity & Sleep (Last 7
+                            Days)</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if activities %}
+                        <div class="list-group list-group-flush">
+                            {% for activity in activities[:5] %}
+                            <div class="list-group-item px-0">
+                                <div class="row small">
+                                    <div class="col-4 text-muted">{{ activity['date'] }}</div>
+                                    <div class="col-8">
+                                        <i class="bi bi-person-walking text-primary"></i> {{
+                                        activity['steps'] }} steps |
+                                        <i class="bi bi-moon text-info"></i> {{
+                                        activity['sleep_hours'] }}h sleep |
+                                        <i class="bi bi-heart-pulse text-danger"></i> {{
+                                        activity['exercise_minutes'] }}min
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No activity data available.</p>
+                        {% endif %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <small><i class="bi bi-info-circle"></i> Data synced from fitness app
+                                (mock)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Attendance Record</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if attendance %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Attended</th>
+                                    <th>Total</th>
+                                    <th>Percentage</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for record in attendance[:4] %}
+                                <tr>
+                                    <td>{{ record['month'] }}</td>
+                                    <td>{{ record['attended_classes'] }}</td>
+                                    <td>{{ record['total_classes'] }}</td>
+                                    <td>
+                                            <span class="badge 
+                                                {% if record['attendance_percentage'] >= 85 %}bg-success
+                                                {% elif record['attendance_percentage'] >= 75 %}bg-warning text-dark
+                                                {% else %}bg-danger{% endif %}">
+                                                {{ "%.1f"|format(record['attendance_percentage']) }}%
+                                            </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No attendance data available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Journals -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Recent Journal Entries
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if journals %}
+                        <div class="list-group list-group-flush">
+                            {% for journal in journals %}
+                            <div class="list-group-item px-0">
+                                <h6 class="mb-1">{{ journal['title'] }}</h6>
+                                <p class="mb-1 small text-muted">{{ journal['content'][:100] }}{% if
+                                    journal['content']|length > 100 %}...{% endif %}</p>
+                                <small class="text-muted">{{ journal['created_at'][:10] }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-4">No journal entries yet.</p>
+                        {% endif %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('journal') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Write Journal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Chatbot Widget (UI Shell - No AI Integration) -->
+<style>
+    .chatbot-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+
+    .chatbot-toggle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .chatbot-toggle:hover {
+        transform: scale(1.1);
+    }
+
+    .chatbot-window {
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        width: 400px;
+        height: 600px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 999;
+    }
+
+    .chatbot-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+    }
+
+    .chatbot-header button {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 20px;
+    }
+
+    .chatbot-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+
+    .chat-message {
+        margin-bottom: 15px;
+        display: flex;
+        animation: slideIn 0.3s ease;
+    }
+
+    .chat-message.user {
+        justify-content: flex-end;
+    }
+
+    .message-bubble {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        word-wrap: break-word;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .message-bubble.bot {
+        background: #f0f0f0;
+        color: #333;
+        border-bottom-left-radius: 4px;
+    }
+
+    .message-bubble.user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chatbot-input-area {
+        padding: 15px;
+        background: white;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 10px;
+    }
+
+    .chatbot-input {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        outline: none;
+        font-size: 14px;
+    }
+
+    .chatbot-input:focus {
+        border-color: #667eea;
+    }
+
+    .chatbot-send {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+
+    .chatbot-send:hover {
+        transform: scale(1.05);
+    }
+
+    .chatbot-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+        .chatbot-window {
+            width: calc(100vw - 40px);
+            height: 500px;
+            right: 20px;
+        }
+    }
+</style>
+
+<div class="chatbot-widget">
+    <div class="chatbot-window" id="chatbotWindow">
+        <div class="chatbot-header">
+            <span>🧸 Chat with Ira.ai</span>
+            <button onclick="toggleChatbot()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="chat-message bot">
+                <div class="message-bubble bot">
+                    Hi! I'm Ira.ai, your wellbeing companion. 🧸 How can I support you today?
+                </div>
+            </div>
+        </div>
+
+        <div class="chatbot-input-area">
+            <button class="voice-btn mic-btn" id="micBtn" onclick="toggleVoiceInput()"
+                    title="Voice input">
+                <i class="bi bi-mic-fill"></i>
+            </button>
+            <input type="text"
+                   class="chatbot-input"
+                   id="chatInput"
+                   placeholder="Type your message..."
+                   onkeypress="handleKeyPress(event)">
+            <button class="voice-btn speaker-btn" id="speakerBtn" onclick="toggleVoiceOutput()"
+                    title="Voice output: ON">
+                <i class="bi bi-volume-up-fill"></i>
+            </button>
+            <button class="chatbot-send" id="sendBtn" onclick="sendMessage()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+
+        <div id="voiceStatus"
+             style="padding: 8px 15px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center; display: none;">
+            <small class="text-muted" style="font-size: 11px;">
+                <span id="voiceStatusText"></span>
+            </small>
+        </div>
+
+        <div style="padding: 8px 15px; background: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center;">
+            <small class="text-muted" style="font-size: 11px;">
+                <i class="bi bi-stars"></i> Powered by Gemini
+            </small>
+        </div>
+    </div>
+
+    <button class="chatbot-toggle" onclick="toggleChatbot()" title="Chat with Ira">
+        <span style="font-size: 36px;">🧸</span>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Schedule meeting functionality
+    document.getElementById('scheduleMeetingBtn').addEventListener('click', function() {
+        fetch('{{ url_for("schedule_meeting") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const snackbar = document.createElement('div');
+                snackbar.className = 'alert alert-success position-fixed bottom-0 end-0 m-3';
+                snackbar.style.zIndex = '9999';
+                snackbar.innerHTML = `
+                    <i class="bi bi-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(snackbar);
+                setTimeout(() => snackbar.remove(), 5000);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // ============================================================================
+    // CHATBOT FUNCTIONALITY (Gemini AI Integration with Streaming)
+    // ============================================================================
+    
+    let isStreaming = false;
+    let currentBotMessageElement = null;
+    
+    // ============================================================================
+    // VOICE FUNCTIONALITY (Web Speech API)
+    // ============================================================================
+    
+    let recognition = null;
+    let isListening = false;
+    let voiceOutputEnabled = true;
+    let isSpeaking = false;
+    let speechSynthesis = window.speechSynthesis;
+    
+    // Initialize Speech Recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = function() {
+            isListening = true;
+            document.getElementById('micBtn').classList.add('listening');
+            showVoiceStatus('🎤 Listening...', true);
+        };
+        
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('chatInput').value = transcript;
+            showVoiceStatus('✓ Recognized: "' + transcript + '"', true);
+            setTimeout(() => hideVoiceStatus(), 2000);
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            showVoiceStatus('❌ Could not recognize speech. Try again.', true);
+            setTimeout(() => hideVoiceStatus(), 3000);
+        };
+        
+        recognition.onend = function() {
+            isListening = false;
+            document.getElementById('micBtn').classList.remove('listening');
+        };
+    }
+    
+    // Toggle voice input
+    function toggleVoiceInput() {
+        if (!recognition) {
+            alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+            return;
+        }
+        
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    }
+    
+    // Toggle voice output
+    function toggleVoiceOutput() {
+        voiceOutputEnabled = !voiceOutputEnabled;
+        const speakerBtn = document.getElementById('speakerBtn');
+        const icon = speakerBtn.querySelector('i');
+        
+        if (voiceOutputEnabled) {
+            icon.className = 'bi bi-volume-up-fill';
+            speakerBtn.title = 'Voice output: ON';
+            speakerBtn.classList.remove('muted');
+        } else {
+            icon.className = 'bi bi-volume-mute-fill';
+            speakerBtn.title = 'Voice output: OFF';
+            speakerBtn.classList.add('muted');
+            
+            // Stop any ongoing speech
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+        }
+    }
+    
+    // Speak text using Web Speech API
+    function speakText(text) {
+        if (!voiceOutputEnabled || !text) return;
+        
+        // Cancel any ongoing speech
+        if (speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.lang = 'en-US';
+        
+        utterance.onstart = function() {
+            isSpeaking = true;
+            showVoiceStatus('🔊 Speaking...', true);
+        };
+        
+        utterance.onend = function() {
+            isSpeaking = false;
+            hideVoiceStatus();
+        };
+        
+        utterance.onerror = function(event) {
+            console.error('Speech synthesis error:', event.error);
+            isSpeaking = false;
+            hideVoiceStatus();
+        };
+        
+        speechSynthesis.speak(utterance);
+    }
+    
+    // Show voice status
+    function showVoiceStatus(message, show) {
+        const statusDiv = document.getElementById('voiceStatus');
+        const statusText = document.getElementById('voiceStatusText');
+        statusText.textContent = message;
+        statusDiv.style.display = show ? 'block' : 'none';
+    }
+    
+    // Hide voice status
+    function hideVoiceStatus() {
+        const statusDiv = document.getElementById('voiceStatus');
+        statusDiv.style.display = 'none';
+    }
+    
+    // ============================================================================
+    // CHAT FUNCTIONALITY
+    // ============================================================================
+    
+    // Toggle chatbot window
+    function toggleChatbot() {
+        const chatWindow = document.getElementById('chatbotWindow');
+        if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+            chatWindow.style.display = 'flex';
+            document.getElementById('chatInput').focus();
+        } else {
+            chatWindow.style.display = 'none';
+            
+            // Stop any ongoing speech when closing
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            if (isListening) {
+                recognition.stop();
+            }
+        }
+    }
+
+    // Handle Enter key press
+    function handleKeyPress(event) {
+        if (event.key === 'Enter' && !isStreaming) {
+            sendMessage();
+        }
+    }
+
+    // Send message with Gemini streaming
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        const sendBtn = document.getElementById('sendBtn');
+
+        if (!message || isStreaming) return;
+
+        // Add user message
+        addUserMessage(message);
+
+        // Clear input and disable controls
+        input.value = '';
+        input.disabled = true;
+        sendBtn.disabled = true;
+        isStreaming = true;
+
+        // Create bot message bubble for streaming
+        currentBotMessageElement = createBotMessageBubble();
+        let fullResponse = ''; // Store full response for TTS
+
+        try {
+            const response = await fetch('{{ url_for("chat") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message })
+            });
+
+            // Check if streaming response
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('text/event-stream')) {
+                // Handle streaming with EventSource-like approach
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.chunk) {
+                                appendToCurrentBotMessage(data.chunk);
+                                fullResponse += data.chunk;
+                            }
+                            
+                            if (data.done) {
+                                finalizeBotMessage();
+                                // Speak the full response
+                                if (fullResponse) {
+                                    speakText(fullResponse);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Handle non-streaming response (fallback mode)
+                const data = await response.json();
+                if (data.success && data.response) {
+                    currentBotMessageElement.textContent = data.response;
+                    fullResponse = data.response;
+                } else {
+                    currentBotMessageElement.textContent = "I apologize, but I encountered an error. Please try again. 🧸";
+                    fullResponse = "I apologize, but I encountered an error. Please try again.";
+                }
+                finalizeBotMessage();
+                speakText(fullResponse);
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            const errorMsg = "I apologize, but I couldn't connect right now. Please try again. 🧸";
+            currentBotMessageElement.textContent = errorMsg;
+            finalizeBotMessage();
+            speakText("I apologize, but I couldn't connect right now. Please try again.");
+        }
+
+        // Re-enable controls
+        input.disabled = false;
+        sendBtn.disabled = false;
+        isStreaming = false;
+        input.focus();
+    }
+
+    // Create bot message bubble for streaming
+    function createBotMessageBubble() {
+        const messagesContainer = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message bot';
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble bot';
+        bubbleDiv.innerHTML = '<span class="streaming-cursor">▋</span>';
+        
+        messageDiv.appendChild(bubbleDiv);
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        return bubbleDiv;
+    }
+
+    // Append text to current bot message (streaming)
+    function appendToCurrentBotMessage(text) {
+        if (!currentBotMessageElement) return;
+        
+        // Remove cursor if exists
+        const cursor = currentBotMessageElement.querySelector('.streaming-cursor');
+        if (cursor) cursor.remove();
+        
+        // Append new text
+        const textNode = document.createTextNode(text);
+        currentBotMessageElement.appendChild(textNode);
+        
+        // Add cursor back
+        const newCursor = document.createElement('span');
+        newCursor.className = 'streaming-cursor';
+        newCursor.textContent = '▋';
+        currentBotMessageElement.appendChild(newCursor);
+        
+        // Scroll to bottom
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Finalize bot message (remove cursor)
+    function finalizeBotMessage() {
+        if (!currentBotMessageElement) return;
+        
+        const cursor = currentBotMessageElement.querySelector('.streaming-cursor');
+        if (cursor) cursor.remove();
+        
+        currentBotMessageElement = null;
+    }
+
+    // Add user message to chat
+    function addUserMessage(text) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message user';
+        messageDiv.innerHTML = `<div class="message-bubble user">${escapeHtml(text)}</div>`;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Utility function to escape HTML
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+</script>
+
+<style>
+    .streaming-cursor {
+        animation: blink 1s infinite;
+        color: #667eea;
+        font-weight: bold;
+    }
+
+    @keyframes blink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+    }
+    
+    /* Voice button styles */
+    .voice-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        color: #667eea;
+        border: 2px solid #e0e0e0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 18px;
+    }
+    
+    .voice-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: scale(1.05);
+    }
+    
+    .voice-btn.listening {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+        animation: pulse 1.5s infinite;
+    }
+    
+    .voice-btn.muted {
+        background: #e0e0e0;
+        color: #999;
+        border-color: #ccc;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        }
+    }
+    
+    .chatbot-input-area {
+        padding: 15px;
+        background: white;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+</style>
+{% endblock %}
