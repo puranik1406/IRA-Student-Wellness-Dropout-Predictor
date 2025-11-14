@@ -9,7 +9,7 @@ AI-powered analysis of academics, attendance, fee payments, and mental health pa
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 
-Deployed site link : https://ira-studentwellness.onrender.com/
+Deployed site link : https://ira-student-wellness-dropout-predictor.onrender.com
 
 ## 👥 Founders
 
