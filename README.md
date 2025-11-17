@@ -518,4 +518,4 @@ Special thanks to all the students and counselors who provided valuable feedback
 
 ---
 
-**© 2025 Beacon Team. Licensed under the MIT License.**
+**© 2025 IRA Team. Licensed under the MIT License.**
